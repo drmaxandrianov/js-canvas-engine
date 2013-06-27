@@ -38,12 +38,10 @@ function JSCEngineCore(canvasWidth, canvasHeight, canvasId) {
         
         this.initAnimFrame();
         JSCEngineLog("Initialization: request for animation frame is done");
-    
-        //initializeGameObjects();
-        //console.log("Initialization: all game objects are initialized");
-        //initializeGameControllers();
-        //console.log("Initialization: all game controls are initialized");
+        
         this.core.isInitialized = true;
+        this.beginLoop();
+        JSCEngineLog("Initialization: completed and render loop started");
     };
     
     this.beginLoop = function() {
@@ -51,6 +49,10 @@ function JSCEngineCore(canvasWidth, canvasHeight, canvasId) {
         this.continueLoop = function () {
             window.requestAnimFrame(self.continueLoop);
             if (self.core.isInitialized) {
+                // Clear screen
+                self.core.context.clearRect(0, 0, 
+                    self.settings.canvas.width, 
+                    self.settings.canvas.height);
                 self.drawObjects();
             }
         };
@@ -59,7 +61,7 @@ function JSCEngineCore(canvasWidth, canvasHeight, canvasId) {
     
     this.initAnimFrame = function() {
         window.requestAnimFrame = (function() {
-            console.log("Initialization: function requestAnimFrame updated");
+            JSCEngineLog("Initialization: function requestAnimFrame updated");
             return  window.requestAnimationFrame ||
                 window.webkitRequestAnimationFrame ||
                 window.mozRequestAnimationFrame ||
@@ -89,6 +91,31 @@ function JSCEngineCore(canvasWidth, canvasHeight, canvasId) {
                 this.drawableObjects[i].angle);
         }
     };
+    
+    this.getObject = function(id) {
+        for (var i = 0; i < this.drawableObjects.length; i++) {
+            if (this.drawableObjects[i].id == id)
+                return this.drawableObjects[i];
+        }
+    }
+    
+    this.objectSetPosition = function(id, xPos, yPos, angle) {
+        var object = this.getObject(id);
+        object.xPos = xPos;
+        object.yPos = yPos;
+        object.angle = angle;
+    }
+    
+    this.objectRotate = function(id, angleDiff) {
+        var object = this.getObject(id);
+        object.angle += angleDiff;
+    }
+    
+    this.objectTranslate = function(id, xPosDiff, yPosDiff) {
+        var object = this.getObject(id);
+        object.xPos += xPosDiff;
+        object.yPos += yPosDiff;
+    }
     
     this.keyHandlers = [];
     this.addKeyHandler = function(keyCode, callback, repeatable) {
