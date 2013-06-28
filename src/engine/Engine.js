@@ -39,6 +39,10 @@ function JSCEngineCore(canvasWidth, canvasHeight, canvasId) {
         this.initAnimFrame();
         JSCEngineLog("Initialization: request for animation frame is done");
         
+        this.initKeyHandlers();
+        this.startKeyHandlersLoop();
+        JSCEngineLog("Initialization: key handlers initialization complete");
+        
         this.core.isInitialized = true;
         this.beginLoop();
         JSCEngineLog("Initialization: completed and render loop started");
@@ -118,10 +122,11 @@ function JSCEngineCore(canvasWidth, canvasHeight, canvasId) {
     }
     
     this.keyHandlers = [];
-    this.addKeyHandler = function(keyCode, callback, repeatable) {
+    this.addKeyHandler = function(keyCode, repeatable, onPress, onRelease) {
         this.keyHandlers.push({
             keyCode: keyCode,
-            callback: callback,
+            onPress: onPress,
+            onRelease: onRelease,
             repeatable: repeatable
         });
     };
@@ -134,11 +139,11 @@ function JSCEngineCore(canvasWidth, canvasHeight, canvasId) {
             if (event === null) keyCode = window.event.keyCode;
             else keyCode = event.keyCode;
             
-            for (var i = 0; i < this.keyHandlers.length; i++) {
+            for (var i = 0; i < self.keyHandlers.length; i++) {
                 if (self.keyHandlers[i].keyCode == keyCode) {
                     self.keyHandlers[i].isPressed = true;
                     if (!self.keyHandlers[i].repeatable) {
-                        self.keyHandlers[i].callback();   
+                        self.keyHandlers[i].onPress();   
                     }
                 }
             }
@@ -149,9 +154,10 @@ function JSCEngineCore(canvasWidth, canvasHeight, canvasId) {
             if (event === null) keyCode = window.event.keyCode;
             else keyCode = event.keyCode;
             
-            for (var i = 0; i < this.keyHandlers.length; i++) {
+            for (var i = 0; i < self.keyHandlers.length; i++) {
                 if (self.keyHandlers[i].keyCode == keyCode) {
                     self.keyHandlers[i].isPressed = false;
+                    self.keyHandlers[i].onRelease();
                 }
             }
         };
@@ -163,7 +169,7 @@ function JSCEngineCore(canvasWidth, canvasHeight, canvasId) {
             for (var i = 0; i < self.keyHandlers.length; i++) {
                 if (self.keyHandlers[i].isPressed) {
                     if (self.keyHandlers[i].repeatable) {
-                        self.keyHandlers[i].callback();
+                        self.keyHandlers[i].onPress();
                     }
                 }
             }
@@ -180,6 +186,13 @@ function JSCEngineCore(canvasWidth, canvasHeight, canvasId) {
     
     
 }
+
+var JSCEngineKeyCodes = {
+    left:         37,
+    right:        39,
+    up:           38,
+    down:         40
+};
 
 function JSCEngineLog(message) {
     console.log("JSCEngine: " + message);
