@@ -5,21 +5,21 @@ function AvatarObject(id) {
     this.angle = 0;
 }
 
-AvatarObject.prototype.setPosition = function (posX, posY) {
+AvatarObject.prototype.setPosition = function(posX, posY) {
     this.posX = posX;
     this.posY = posY;
 };
 
-AvatarObject.prototype.translate = function (diffX, diffY) {
+AvatarObject.prototype.translate = function(diffX, diffY) {
     this.posX += diffX;
     this.posY += diffY;
 };
 
-AvatarObject.prototype.setRotation = function (angle) {
+AvatarObject.prototype.setRotation = function(angle) {
     this.angle = angle;
 };
 
-AvatarObject.prototype.rotate = function (diffAngle) {
+AvatarObject.prototype.rotate = function(diffAngle) {
     this.angle += diffAngle;
 };
 
@@ -31,7 +31,7 @@ AvatarObject.prototype.getPositionY = function() {
     return this.posY;
 };
 
-AvatarObject.prototype.draw = function (context) {
+AvatarObject.prototype.draw = function(context) {
     context.beginPath();
     context.arc(this.posX, this.posY, 20, 0, 2 * Math.PI);
     context.stroke();
