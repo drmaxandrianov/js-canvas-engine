@@ -60,7 +60,7 @@ engine.addKeyHandler({
 engine.addKeyHandler({
     keyCode: JSCEngineKeyCodes.up,
     onPress: function() {
-        engine.objectTranslate("1", 0, - 1);
+        engine.objectMoveForward("1", 1);
     },
     smooth: true
 });

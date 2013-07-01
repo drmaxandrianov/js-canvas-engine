@@ -172,7 +172,7 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
     // USABLE
     // Get the pointer to the object
     // object = {id: string, xPos: int, yPos: int, angle: intRadians, 
-    // onDraw: func, isHidden: boolean}
+    // onDraw: func}
     this.getObject = function(id) {
         var index = this.objectsIndex[id];
         return this.objects[index];
@@ -227,6 +227,14 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
                 yPos
             );
     };
+    
+    // USABLE
+    // Moves the object forward using its direction angle
+    this.objectMoveForward = function(id, distance) {
+        var object = this.getObject(id);
+        object.xPos += Math.cos(object.angle) * distance;
+        object.yPos += Math.sin(object.angle) * distance;
+    }
 
     // Storage for all key handlers
     this.keyHandlers = [];
