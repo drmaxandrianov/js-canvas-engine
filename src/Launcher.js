@@ -1,10 +1,18 @@
 var engine = new JSCEngineCreator("pad", 400, 400);
-
+var bullets = [];
+var lastBulletId = 0;
+var userPosX = 0;
+var userPosY = 0;
+var mousePosX = 0;
+var mousePosY = 0;
 
 engine.addObject({
     id: "1",
+    layer: 10,
     onDraw: function (context, objectData) {
-        JSCEEngineDrawHelpers.drawImage(context, document.getElementById("icon"), objectData);
+        JSCEEngineHelpers.drawImage(context, document.getElementById("icon"), objectData);
+        userPosX = objectData.xPos;
+        userPosY = objectData.yPos;
     }
 });
 
@@ -28,6 +36,25 @@ function drawRandom(context, objectData) {
 engine.addMouseHandler({
     onMove: function (mouseData) {
         engine.objectLookAt("1", mouseData.xPos, mouseData.yPos);
+        mousePosX = mouseData.xPos;
+        mousePosY = mouseData.yPos;
+    },
+    onLeftDown : function(mouseData) {
+        var bulletName = "bullet" + lastBulletId++;
+        bullets.push(bulletName);
+        engine.addObject({
+            id: bulletName,
+            xPos: userPosX,
+            yPos: userPosY,
+            angle: JSCEEngineHelpers.angleFromPoints(userPosX, userPosY, mousePosX, mousePosY),
+            onDraw: function(context, objectData) {
+                engine.objectMoveForward(objectData.id, 5);
+                context.beginPath();
+                context.arc(objectData.xPos, objectData.yPos, 2, 0, 2 * Math.PI);
+                context.stroke();
+            }
+        });
+
     },
     onDraw: function (context, mouseData) {
         context.beginPath();

@@ -30,7 +30,7 @@ function JSCEngineCreator(canvasId, canvasWidth, canvasHeight) {
 }
 
 // Game engine core class, all functions below are marked as USABLE if
-// they are planned by designe to be used by the user
+// they are planned by design to be used by the user
 function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
     // Local settings of engine
     this.settings = {
@@ -93,6 +93,11 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
                     self.settings.canvas.width,
                     self.settings.canvas.height);
 
+                // Perform iteration actions before drawing
+                if (self.iterationHandler != null) {
+                    self.iterationHandler();
+                }
+
                 // Draw objects
                 self.drawObjects();
 
@@ -122,6 +127,25 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
         })();
     };
 
+    // Storage for iteration handler callbacks
+    this.iterationHandler = null;
+
+    // USABLE
+    // Adds function which will be executed in loop before each drawing
+    // iterationHandler = {onDrawIteration: func, onPhysicsIteration: func};
+    this.addIterationHandler = function(iterationHandler) {
+        if (iterationHandler.onDrawIteration === undefined
+            && iterationHandler.onPhysicsIteration === undefined) {
+            JSCEngineError("iteration handler is empty, any callback should be provided");
+            return;
+        }
+
+        iterationHandler.onDrawIteration = iterationHandler.onDrawIteration || function() {};
+        iterationHandler.onPhysicsIteration = iterationHandler.onPhysicsIteration || function() {};
+
+        this.iterationHandler = iterationHandler;
+    };
+
     // Storage for all drawable objects
     this.objects = [];
 
@@ -130,7 +154,7 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
 
     // USABLE
     // Add new object into engine: 
-    // object = {id: string, xPos: int, yPos: int, angle: intRadians, 
+    // object = {id: string, xPos: int, yPos: int, angle: intRadians, layer: int,
     // onDraw: func}
     this.addObject = function (object) {
         if (object.id === undefined) {
@@ -149,9 +173,31 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
         object.xPos = object.xPos || 0;
         object.yPos = object.yPos || 0;
         object.angle = object.angle || 0;
+        object.layer = object.layer || 0;
 
+        if (typeof(object.layer) != "number") {
+            JSCEngineError("layer of object must be a number");
+            return;
+        }
+
+        // Add object to collection of objects
         this.objects.push(object);
-        this.objectsIndex[object.id] = this.objects.length - 1;
+
+        // Sort collection of objects by layer
+        this.objects.sort(this.objectLayersComparison);
+
+        // Rebuild indexes
+        this.objectsIndex = [];
+        for (var i = 0; i < this.objects.length; i++) {
+            this.objectsIndex[this.objects[i].id] = i;
+        }
+    };
+
+    // Comparison function for objects layers
+    this.objectLayersComparison = function(objectData1, objectData2) {
+        if (objectData1.layer < objectData2.layer) return -1;
+        else if (objectData1.layer > objectData2.layer) return 1;
+        return 0;
     };
 
     // Automatically called to draw all objects
@@ -168,9 +214,8 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
         }
     };
 
-    // USABLE
-    // Get the pointer to the object
-    // object = {id: string, xPos: int, yPos: int, angle: intRadians, 
+    // Get the pointer to the object, not all fields may be edited (for example: id and layer are fixed)
+    // object = {id: string, xPos: int, yPos: int, angle: intRadians, layer: int,
     // onDraw: func}
     this.getObject = function (id) {
         var index = this.objectsIndex[id];
@@ -219,7 +264,7 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
     // Make object view at the specified point
     this.objectLookAt = function (id, xPos, yPos) {
         var object = this.getObject(id);
-        object.angle = JSCEEngineDrawHelpers.angleFromPoints(
+        object.angle = JSCEEngineHelpers.angleFromPoints(
             object.xPos,
             object.yPos,
             xPos,
@@ -386,8 +431,8 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
 }
 
 // Helper class for user to do common tasks, all functions below are marked as 
-// USABLE if they are planned by designe to be used by the user
-var JSCEEngineDrawHelpers = (function () {
+// USABLE if they are planned by design to be used by the user
+var JSCEEngineHelpers = (function () {
 
     // USABLE
     // Makes it easy to draw an image using object data with specified angle
