@@ -134,15 +134,17 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
     // USABLE
     // Adds function which will be executed in loop before each drawing
     // iterationHandler = {onDrawIteration: func, onPhysicsIteration: func};
-    this.setIterationHandler = function(iterationHandler) {
+    this.setIterationHandler = function (iterationHandler) {
         if (iterationHandler.onDrawIteration === undefined
             && iterationHandler.onPhysicsIteration === undefined) {
             JSCEngineError("iteration handler is empty, any callback should be provided");
             return;
         }
 
-        iterationHandler.onDrawIteration = iterationHandler.onDrawIteration || function() {};
-        iterationHandler.onPhysicsIteration = iterationHandler.onPhysicsIteration || function() {};
+        iterationHandler.onDrawIteration = iterationHandler.onDrawIteration || function () {
+        };
+        iterationHandler.onPhysicsIteration = iterationHandler.onPhysicsIteration || function () {
+        };
 
         this.iterationHandler = iterationHandler;
 
@@ -199,7 +201,7 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
     };
 
     // Comparison function for objects layers
-    this.objectLayersComparison = function(objectData1, objectData2) {
+    this.objectLayersComparison = function (objectData1, objectData2) {
         if (objectData1.layer < objectData2.layer) return -1;
         else if (objectData1.layer > objectData2.layer) return 1;
         return 0;
@@ -320,7 +322,7 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
 
     // USABLE
     // Remove key handler
-    this.deleteKeyHandler = function(keyCode) {
+    this.deleteKeyHandler = function (keyCode) {
         for (var i = 0; i < this.keyHandlers.length; i++) {
             if (this.keyHandlers[i].keyCode == keyCode) {
                 this.keyHandlers.splice(i, 1);
@@ -470,9 +472,9 @@ var JSCEEngineHelpers = (function () {
 
     // USABLE
     // Calculates the angle from two points
-    this.angleFromPoints = function (x0, y0, x1, y1) {
-        var dX = x0 - x1;
-        var dY = y0 - y1;
+    this.angleFromPoints = function (xPos, yPos, xLookAt, yLookAt) {
+        var dX = xPos - xLookAt;
+        var dY = yPos - yLookAt;
         if (dY >= 0) {
             return Math.PI / 2 + Math.atan2(dX, -dY);
         } else {
@@ -480,65 +482,10 @@ var JSCEEngineHelpers = (function () {
         }
     };
 
-    this.getRectanglePoints = function (objectData) {
-        if (objectData.boundingBoxHeight === undefined ||
-            objectData.boundingBoxWidth === undefined ||
-            (objectData.boundingBoxHeight == 0 && objectData.boundingBoxWidth == 0)) {
-            return null;
-        }
-
-        var ox = objectData.xPos, oy = objectData.yPos, oa = objectData.angle;
-        var ow = objectData.boundingBoxWidth, oh = objectData.boundingBoxHeight;
-
-        var rect = {};
-
-        // Setup initial position
-        rect.x1 = -ow/2;
-        rect.y1 = -oh/2;
-        rect.x2 = ow/2;
-        rect.y2 = -oh/2;
-        rect.x3 = ow/2;
-        rect.y3 = oh/2;
-        rect.x4 = -ow/2;
-        rect.y4 = oh/2;
-
-        // Rotate around center
-        var rect2 = {};
-        rect2.x1 = rect.x1 * Math.cos(oa) - rect.y1 * Math.sin(oa);
-        rect2.y1 = rect.y1 * Math.cos(oa) + rect.x1 * Math.sin(oa);
-        rect2.x2 = rect.x2 * Math.cos(oa) - rect.y2 * Math.sin(oa);
-        rect2.y2 = rect.y2 * Math.cos(oa) + rect.x2 * Math.sin(oa);
-        rect2.x3 = rect.x3 * Math.cos(oa) - rect.y3 * Math.sin(oa);
-        rect2.y3 = rect.y3 * Math.cos(oa) + rect.x3 * Math.sin(oa);
-        rect2.x4 = rect.x4 * Math.cos(oa) - rect.y4 * Math.sin(oa);
-        rect2.y4 = rect.y4 * Math.cos(oa) + rect.x4 * Math.sin(oa);
-
-        // Translate to object position
-        rect.x1 = rect2.x1 + ox;
-        rect.y1 = rect2.y1 + oy;
-        rect.x2 = rect2.x2 + ox;
-        rect.y2 = rect2.y2 + oy;
-        rect.x3 = rect2.x3 + ox;
-        rect.y3 = rect2.y3 + oy;
-        rect.x4 = rect2.x4 + ox;
-        rect.y4 = rect2.y4 + oy;
-
-        return [
-            rect.x1,
-            rect.y1,
-            rect.x2,
-            rect.y2,
-            rect.x3,
-            rect.y3,
-            rect.x4,
-            rect.y4
-        ];
-    };
-
     // USABLE
     // https://gist.github.com/shamansir/3007244
     // Check intersection of two objects
-    this.checkObjectsIntersection = function(objectData1, objectData2) {
+    this.checkObjectsIntersection = function (objectData1, objectData2) {
 
         function edgeTest(p1, p2, p3, r2) {
             var rot = [ -(p2[1] - p1[1]),
@@ -547,9 +494,9 @@ var JSCEEngineHelpers = (function () {
             var ref = (rot[0] * (p3[0] - p1[0]) +
                 rot[1] * (p3[1] - p1[1])) >= 0;
 
-            for (var i = 0, il = r2.length; i < il; i+=2) {
-                if (((rot[0] * (r2[i]   - p1[0]) +
-                    rot[1] * (r2[i+1] - p1[1])) >= 0) === ref) return false;
+            for (var i = 0, il = r2.length; i < il; i += 2) {
+                if (((rot[0] * (r2[i] - p1[0]) +
+                    rot[1] * (r2[i + 1] - p1[1])) >= 0) === ref) return false;
             }
 
             return true;
@@ -567,21 +514,21 @@ var JSCEEngineHelpers = (function () {
             for (var pi = 0, pl = r1.length; pi < pl; pi += 2) {
                 pn = (pi === (pl - 2)) ? 0 : pi + 2; // next point
                 px = (pn === (pl - 2)) ? 0 : pn + 2;
-                if (edgeTest([r1[pi], r1[pi+1]],
-                    [r1[pn], r1[pn+1]],
-                    [r1[px], r1[px+1]], r2)) return false;
+                if (edgeTest([r1[pi], r1[pi + 1]],
+                    [r1[pn], r1[pn + 1]],
+                    [r1[px], r1[px + 1]], r2)) return false;
             }
             for (var pi = 0, pl = r2.length; pi < pl; pi += 2) {
                 pn = (pi === (pl - 2)) ? 0 : pi + 2; // next point
                 px = (pn === (pl - 2)) ? 0 : pn + 2;
-                if (edgeTest([r2[pi], r2[pi+1]],
-                    [r2[pn], r2[pn+1]],
-                    [r2[px], r2[px+1]], r1)) return false;
+                if (edgeTest([r2[pi], r2[pi + 1]],
+                    [r2[pn], r2[pn + 1]],
+                    [r2[px], r2[px + 1]], r1)) return false;
             }
             return true;
         }
 
-        function isUndefined (value) {
+        function isUndefined(value) {
             return value === undefined;
         }
 
@@ -593,7 +540,7 @@ var JSCEEngineHelpers = (function () {
          * @param b an array of connected points [{x:, y:}, {x:, y:},...] that form a closed polygon
          * @return true if there is any intersection between the 2 polygons, false otherwise
          */
-        function doPolygonsIntersect (a, b) {
+        function doPolygonsIntersect(a, b) {
             console.log("1: " + JSON.stringify(a));
             console.log("2: " + JSON.stringify(b));
             var polygons = [a, b];
@@ -651,18 +598,15 @@ var JSCEEngineHelpers = (function () {
             return true;
         }
 
-        var rect1 = this.getRectanglePoints(objectData1);
-        var rect2 = this.getRectanglePoints(objectData2);
+        var rect1 = JSCEEngineSupport.getRectanglePoints(objectData1);
+        var rect2 = JSCEEngineSupport.getRectanglePoints(objectData2);
         if (rect1 == null || rect2 == null) {
             console.log("ONE OBJECT IS NULL");
             return false;
         }
 
         //return isecRects(rect1, rect2);
-        return doPolygonsIntersect(
-            [{x: rect1[0], y: rect1[1]},{x: rect1[2], y: rect1[3]},{x: rect1[4], y: rect1[5]},{x: rect1[6], y: rect1[7]}],
-            [{x: rect2[0], y: rect2[1]},{x: rect2[2], y: rect2[3]},{x: rect2[4], y: rect2[5]},{x: rect2[6], y: rect2[7]}]
-        );
+        return doPolygonsIntersect(rect1, rect2);
     };
 
     return this;
@@ -684,4 +628,59 @@ var JSCEngineKeyCodes = {
     right: 39,
     up: 38,
     down: 40
+};
+
+var JSCEEngineSupport = {
+
+    // Extrude the polygon line from object's rectangular bounding box
+    getRectanglePoints: function (objectData) {
+        // Check that object data is valid an collision can be performed
+        if (objectData.boundingBoxHeight === undefined ||
+            objectData.boundingBoxWidth === undefined ||
+            objectData.boundingBoxHeight == 0 && objectData.boundingBoxWidth == 0) {
+            return null;
+        }
+
+        var ox = objectData.xPos, oy = objectData.yPos, oa = objectData.angle;
+        var ow = objectData.boundingBoxWidth, oh = objectData.boundingBoxHeight;
+
+        // Setup initial position
+        var rect = {};
+        rect.x1 = -ow / 2;
+        rect.y1 = -oh / 2;
+        rect.x2 = ow / 2;
+        rect.y2 = -oh / 2;
+        rect.x3 = ow / 2;
+        rect.y3 = oh / 2;
+        rect.x4 = -ow / 2;
+        rect.y4 = oh / 2;
+
+        // Rotate around center
+        var rectR = {};
+        rectR.x1 = rect.x1 * Math.cos(oa) - rect.y1 * Math.sin(oa);
+        rectR.y1 = rect.y1 * Math.cos(oa) + rect.x1 * Math.sin(oa);
+        rectR.x2 = rect.x2 * Math.cos(oa) - rect.y2 * Math.sin(oa);
+        rectR.y2 = rect.y2 * Math.cos(oa) + rect.x2 * Math.sin(oa);
+        rectR.x3 = rect.x3 * Math.cos(oa) - rect.y3 * Math.sin(oa);
+        rectR.y3 = rect.y3 * Math.cos(oa) + rect.x3 * Math.sin(oa);
+        rectR.x4 = rect.x4 * Math.cos(oa) - rect.y4 * Math.sin(oa);
+        rectR.y4 = rect.y4 * Math.cos(oa) + rect.x4 * Math.sin(oa);
+
+        // Translate to object's position
+        rect.x1 = rectR.x1 + ox;
+        rect.y1 = rectR.y1 + oy;
+        rect.x2 = rectR.x2 + ox;
+        rect.y2 = rectR.y2 + oy;
+        rect.x3 = rectR.x3 + ox;
+        rect.y3 = rectR.y3 + oy;
+        rect.x4 = rectR.x4 + ox;
+        rect.y4 = rectR.y4 + oy;
+
+        return [
+            {x: rect.x1, y: rect.y1},
+            {x: rect.x2, y: rect.y2},
+            {x: rect.x3, y: rect.y3},
+            {x: rect.x4, y: rect.y4}
+        ];
+    }
 };
