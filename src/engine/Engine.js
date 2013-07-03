@@ -24,9 +24,78 @@
 // Main entry point for users of engine. It is suggested to call to this
 // function to create new instance of engine for future compatibility
 function JSCEngineCreator(canvasId, canvasWidth, canvasHeight) {
-    var engine = new JSCEngineCore(canvasId, canvasWidth, canvasHeight);
-    engine.initialize();
-    return engine;
+    var engineRecord = new JSCEngineCore(canvasId, canvasWidth, canvasHeight);
+    engineRecord.initialize();
+    return new JSCEngine(engineRecord);
+}
+
+function JSCEngine(engineRecord) {
+    var engine = engineRecord;
+
+    this.iterationHandlerSet = function (iterationHandler) {
+        engine.setIterationHandler(iterationHandler);
+    };
+
+    this.objectAdd = function (object) {
+        engine.addObject(object);
+    };
+
+    this.objectClone = function (id) {
+        var object = engine.getObject(id);
+        return {
+            id: object.id,
+            xPos: object.xPos,
+            yPos: object.yPos,
+            angle: object.angle,
+            layer: object.layer,
+            boundingBoxWidth: object.boundingBoxWidth,
+            boundingBoxHeight: object.boundingBoxHeight
+        };
+    };
+
+    this.objectDelete = function (id) {
+        engine.deleteObject(id);
+    };
+
+    this.objectSetPosition = function (id, xPos, yPos) {
+        engine.objectSetPosition(id, xPos, yPos);
+    };
+
+    this.objectSetRotation = function (id, angle) {
+        engine.objectSetRotation(id, angle);
+    };
+
+    this.objectRotate = function (id, angleDiff) {
+        engine.objectRotate(id, angleDiff);
+    };
+
+    this.objectTranslate = function (id, xPosDiff, yPosDiff) {
+        engine.objectTranslate(id, xPosDiff, yPosDiff);
+    };
+
+    this.objectLookAt = function (id, xPos, yPos) {
+        engine.objectLookAt(id, xPos, yPos);
+    };
+
+    this.objectMoveForward = function (id, distance) {
+        engine.objectMoveForward(id, distance);
+    };
+
+    this.objectStrafeRight = function (id, distance) {
+        engine.objectStrafeRight(id, distance);
+    };
+
+    this.keyHandlerAdd = function (keyHandler) {
+        engine.addKeyHandler(keyHandler);
+    };
+
+    this.keyHandlerDelete = function (keyHandler) {
+        engine.deleteKeyHandler(keyHandler);
+    };
+
+    this.mouseHandlerSet = function (mouseHandler) {
+        engine.setMouseHandler(mouseHandler);
+    };
 }
 
 // Game engine core class, all functions below are marked as USABLE if
@@ -160,7 +229,7 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
     // USABLE
     // Add new object into engine: 
     // object = {id: string, xPos: int, yPos: int, angle: intRadians, layer: int, boundingBoxWidth: int,
-    // boundingBoxHeight: int, onDraw: func}
+    // boundingBoxHeight: int, onDraw: func, onLeftClickDown: func, onLeftClickUp: func}
     this.addObject = function (object) {
         if (object.id === undefined) {
             JSCEngineError("can not add object without id");
@@ -181,6 +250,8 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
         object.layer = object.layer || 0;
         object.boundingBoxWidth = object.boundingBoxWidth || 0;
         object.boundingBoxHeight = object.boundingBoxHeight || 0;
+        object.onLeftClickDown = object.onLeftClickDown || null;
+        object.onLeftClickUp = object.onLeftClickUp || null;
 
         if (typeof(object.layer) != "number") {
             JSCEngineError("layer of object must be a number");
@@ -217,6 +288,7 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
                     xPos: this.objects[i].xPos,
                     yPos: this.objects[i].yPos,
                     angle: this.objects[i].angle,
+                    layer: this.objects[i].layer,
                     boundingBoxWidth: this.objects[i].boundingBoxWidth,
                     boundingBoxHeight: this.objects[i].boundingBoxHeight
                 });
@@ -226,7 +298,7 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
     // USABLE
     // Get the pointer to the object, not all fields may be edited (for example: id and layer are fixed)
     // object = {id: string, xPos: int, yPos: int, angle: intRadians, layer: int, boundingBoxWidth: int,
-    // boundingBoxHeight: int, onDraw: func}
+    // boundingBoxHeight: int, onDraw: func, onLeftClickDown: func, onLeftClickUp: func}
     this.getObject = function (id) {
         var index = this.objectsIndex[id];
         return this.objects[index];
@@ -292,6 +364,14 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
         var object = this.getObject(id);
         object.xPos += Math.cos(object.angle) * distance;
         object.yPos += Math.sin(object.angle) * distance;
+    };
+
+    // USABLE
+    // Strafe the object to the left or to the right
+    this.objectStrafeRight = function (id, distance) {
+        var object = this.getObject(id);
+        object.xPos += Math.cos(object.angle + Math.PI / 2) * distance;
+        object.yPos += Math.sin(object.angle + Math.PI / 2) * distance;
     };
 
     // Storage for all key handlers
@@ -424,6 +504,7 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
                     yPos: self.mouseHandler.yPos,
                     isLeftPressed: self.mouseHandler.isLeftPressed
                 });
+                self.processObjectsClicks("leftClickDown");
             }
         });
 
@@ -437,6 +518,7 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
                     yPos: self.mouseHandler.yPos,
                     isLeftPressed: self.mouseHandler.isLeftPressed
                 });
+                self.processObjectsClicks("leftClickUp");
             }
         });
 
@@ -451,6 +533,42 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
                 });
             }
         });
+    };
+
+    this.processObjectsClicks = function (typeOfClick) {
+        for (var i = 0; i < this.objects.length; i++) {
+            if (typeOfClick == "leftClickDown") {
+                if (this.objects[i].onLeftClickDown != null) {
+                    if (JSCEEngineHelpers.doPolygonsIntersect(
+                        JSCEEngineHelpers.getRectanglePoints(this.objects[i]),
+                        [
+                            {x: this.mouseHandler.xPos, y: this.mouseHandler.yPos}
+                        ]
+                    )) {
+                        this.objects[i].onLeftClickDown({
+                            xPos: this.mouseHandler.xPos,
+                            yPos: this.mouseHandler.yPos,
+                            isLeftPressed: this.mouseHandler.isLeftPressed
+                        });
+                    }
+                }
+            } else if (typeOfClick == "leftClickUp") {
+                if (this.objects[i].onLeftClickUp != null) {
+                    if (JSCEEngineHelpers.doPolygonsIntersect(
+                        JSCEEngineHelpers.getRectanglePoints(this.objects[i]),
+                        [
+                            {x: this.mouseHandler.xPos, y: this.mouseHandler.yPos}
+                        ]
+                    )) {
+                        this.objects[i].onLeftClickUp({
+                            xPos: this.mouseHandler.xPos,
+                            yPos: this.mouseHandler.yPos,
+                            isLeftPressed: this.mouseHandler.isLeftPressed
+                        });
+                    }
+                }
+            }
+        }
     };
 
 
@@ -482,158 +600,81 @@ var JSCEEngineHelpers = (function () {
         }
     };
 
-    // USABLE
-    // https://gist.github.com/shamansir/3007244
-    // Check intersection of two objects
     this.checkObjectsIntersection = function (objectData1, objectData2) {
-
-        function edgeTest(p1, p2, p3, r2) {
-            var rot = [ -(p2[1] - p1[1]),
-                p2[0] - p1[0] ];
-
-            var ref = (rot[0] * (p3[0] - p1[0]) +
-                rot[1] * (p3[1] - p1[1])) >= 0;
-
-            for (var i = 0, il = r2.length; i < il; i += 2) {
-                if (((rot[0] * (r2[i] - p1[0]) +
-                    rot[1] * (r2[i + 1] - p1[1])) >= 0) === ref) return false;
-            }
-
-            return true;
-        }
-
-        // both rects must be specified as all four points in plain vector, like:
-        //   [ x1, y1, x2, y2, x3, y3, x4, y4 ], clockwise from top-left point
-        // their points must already be rotated and specified in global space before passing to this function
-        function isecRects(r1, r2) {
-            if (!r1 || !r2) throw new Error('Rects are not accessible');
-            console.log("1 " + JSON.stringify(r1));
-            console.log("2 " + JSON.stringify(r2));
-
-            var pn, px;
-            for (var pi = 0, pl = r1.length; pi < pl; pi += 2) {
-                pn = (pi === (pl - 2)) ? 0 : pi + 2; // next point
-                px = (pn === (pl - 2)) ? 0 : pn + 2;
-                if (edgeTest([r1[pi], r1[pi + 1]],
-                    [r1[pn], r1[pn + 1]],
-                    [r1[px], r1[px + 1]], r2)) return false;
-            }
-            for (var pi = 0, pl = r2.length; pi < pl; pi += 2) {
-                pn = (pi === (pl - 2)) ? 0 : pi + 2; // next point
-                px = (pn === (pl - 2)) ? 0 : pn + 2;
-                if (edgeTest([r2[pi], r2[pi + 1]],
-                    [r2[pn], r2[pn + 1]],
-                    [r2[px], r2[px + 1]], r1)) return false;
-            }
-            return true;
-        }
-
-        function isUndefined(value) {
-            return value === undefined;
-        }
-
-        /**
-         * Helper function to determine whether there is an intersection between the two polygons described
-         * by the lists of vertices. Uses the Separating Axis Theorem
-         *
-         * @param a an array of connected points [{x:, y:}, {x:, y:},...] that form a closed polygon
-         * @param b an array of connected points [{x:, y:}, {x:, y:},...] that form a closed polygon
-         * @return true if there is any intersection between the 2 polygons, false otherwise
-         */
-        function doPolygonsIntersect(a, b) {
-            console.log("1: " + JSON.stringify(a));
-            console.log("2: " + JSON.stringify(b));
-            var polygons = [a, b];
-            var minA, maxA, projected, i, i1, j, minB, maxB;
-
-            for (i = 0; i < polygons.length; i++) {
-
-                // for each polygon, look at each edge of the polygon, and determine if it separates
-                // the two shapes
-                var polygon = polygons[i];
-                for (i1 = 0; i1 < polygon.length; i1++) {
-
-                    // grab 2 vertices to create an edge
-                    var i2 = (i1 + 1) % polygon.length;
-                    var p1 = polygon[i1];
-                    var p2 = polygon[i2];
-
-                    // find the line perpendicular to this edge
-                    var normal = { x: p2.y - p1.y, y: p1.x - p2.x };
-
-                    minA = maxA = undefined;
-                    // for each vertex in the first shape, project it onto the line perpendicular to the edge
-                    // and keep track of the min and max of these values
-                    for (j = 0; j < a.length; j++) {
-                        projected = normal.x * a[j].x + normal.y * a[j].y;
-                        if (isUndefined(minA) || projected < minA) {
-                            minA = projected;
-                        }
-                        if (isUndefined(maxA) || projected > maxA) {
-                            maxA = projected;
-                        }
-                    }
-
-                    // for each vertex in the second shape, project it onto the line perpendicular to the edge
-                    // and keep track of the min and max of these values
-                    minB = maxB = undefined;
-                    for (j = 0; j < b.length; j++) {
-                        projected = normal.x * b[j].x + normal.y * b[j].y;
-                        if (isUndefined(minB) || projected < minB) {
-                            minB = projected;
-                        }
-                        if (isUndefined(maxB) || projected > maxB) {
-                            maxB = projected;
-                        }
-                    }
-
-                    // if there is no overlap between the projects, the edge we are looking at separates the two
-                    // polygons, and we know there is no overlap
-                    if (maxA < minB || maxB < minA) {
-                        //console.log("polygons don't intersect!");
-                        return false;
-                    }
-                }
-            }
-            return true;
-        }
-
-        var rect1 = JSCEEngineSupport.getRectanglePoints(objectData1);
-        var rect2 = JSCEEngineSupport.getRectanglePoints(objectData2);
+        var rect1 = this.getRectanglePoints(objectData1);
+        var rect2 = this.getRectanglePoints(objectData2);
         if (rect1 == null || rect2 == null) {
-            console.log("ONE OBJECT IS NULL");
             return false;
         }
-
-        //return isecRects(rect1, rect2);
-        return doPolygonsIntersect(rect1, rect2);
+        return this.doPolygonsIntersect(rect1, rect2);
     };
 
-    return this;
-})();
+    /**
+     * Helper function to determine whether there is an intersection between the two polygons described
+     * by the lists of vertices. Uses the Separating Axis Theorem
+     *
+     * @param polygonA an array of connected points [{x:, y:}, {x:, y:},...] that form polygonA closed polygon
+     * @param polygonB an array of connected points [{x:, y:}, {x:, y:},...] that form polygonA closed polygon
+     * @return true if there is any intersection between the 2 polygons, false otherwise
+     */
+    this.doPolygonsIntersect = function (polygonA, polygonB) {
+        var polygons = [polygonA, polygonB];
+        var minA, maxA, projected, i, i1, j, minB, maxB;
 
-// Logging for engine
-function JSCEngineLog(message) {
-    console.log("JSCEngine INFO: " + message);
-}
+        for (i = 0; i < polygons.length; i++) {
 
-// Logging for engine with errors
-function JSCEngineError(message) {
-    console.log("JSCEngine ERROR: " + message);
-}
+            // for each polygon, look at each edge of the polygon, and determine if it separates
+            // the two shapes
+            var polygon = polygons[i];
+            for (i1 = 0; i1 < polygon.length; i1++) {
 
-// Support structure for quick key codes access
-var JSCEngineKeyCodes = {
-    left: 37,
-    right: 39,
-    up: 38,
-    down: 40
-};
+                // grab 2 vertices to create an edge
+                var i2 = (i1 + 1) % polygon.length;
+                var p1 = polygon[i1];
+                var p2 = polygon[i2];
 
-var JSCEEngineSupport = {
+                // find the line perpendicular to this edge
+                var normal = { x: p2.y - p1.y, y: p1.x - p2.x };
+
+                minA = maxA = undefined;
+                // for each vertex in the first shape, project it onto the line perpendicular to the edge
+                // and keep track of the min and max of these values
+                for (j = 0; j < polygonA.length; j++) {
+                    projected = normal.x * polygonA[j].x + normal.y * polygonA[j].y;
+                    if (minA === undefined || projected < minA) {
+                        minA = projected;
+                    }
+                    if (maxA === undefined || projected > maxA) {
+                        maxA = projected;
+                    }
+                }
+
+                // for each vertex in the second shape, project it onto the line perpendicular to the edge
+                // and keep track of the min and max of these values
+                minB = maxB = undefined;
+                for (j = 0; j < polygonB.length; j++) {
+                    projected = normal.x * polygonB[j].x + normal.y * polygonB[j].y;
+                    if (minB === undefined || projected < minB) {
+                        minB = projected;
+                    }
+                    if (maxB === undefined || projected > maxB) {
+                        maxB = projected;
+                    }
+                }
+
+                // if there is no overlap between the projects, the edge we are looking at separates the two
+                // polygons, and we know there is no overlap
+                if (maxA < minB || maxB < minA) {
+                    //console.log("polygons don't intersect!");
+                    return false;
+                }
+            }
+        }
+        return true;
+    };
 
     // Extrude the polygon line from object's rectangular bounding box
-    getRectanglePoints: function (objectData) {
+    this.getRectanglePoints = function (objectData) {
         // Check that object data is valid an collision can be performed
         if (objectData.boundingBoxHeight === undefined ||
             objectData.boundingBoxWidth === undefined ||
@@ -682,5 +723,25 @@ var JSCEEngineSupport = {
             {x: rect.x3, y: rect.y3},
             {x: rect.x4, y: rect.y4}
         ];
-    }
+    };
+
+    return this;
+})();
+
+// Logging for engine
+function JSCEngineLog(message) {
+    console.log("JSCEngine INFO: " + message);
+}
+
+// Logging for engine with errors
+function JSCEngineError(message) {
+    console.log("JSCEngine ERROR: " + message);
+}
+
+// Support structure for quick key codes access
+var JSCEngineKeyCodes = {
+    left: 37,
+    right: 39,
+    up: 38,
+    down: 40
 };

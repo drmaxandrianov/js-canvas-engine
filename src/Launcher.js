@@ -1,7 +1,7 @@
-var engine = new JSCEngineCreator("pad", 400, 400);
+var jscEngine = new JSCEngineCreator("pad", 400, 400);
 var isIntersecting = false;
 
-engine.addObject({
+jscEngine.objectAdd({
     id: "1",
     layer: 10,
     xPos: 100,
@@ -11,19 +11,24 @@ engine.addObject({
     angle: 0,
     onDraw: function (context, objectData) {
         context.save();
+        context.beginPath();
         context.translate(objectData.xPos, objectData.yPos);
         context.rotate(objectData.angle);
-        if (isIntersecting) context.strokeStyle="red";
-        else context.strokeStyle="blue";
-        context.rect(-(objectData.boundingBoxWidth / 2),-(objectData.boundingBoxHeight / 2),
+        context.rect(-(objectData.boundingBoxWidth / 2), -(objectData.boundingBoxHeight / 2),
             objectData.boundingBoxWidth, objectData.boundingBoxHeight);
+        if (isIntersecting) context.strokeStyle = "red";
+        else context.strokeStyle = "blue";
         context.stroke();
+        context.closePath();
         context.restore();
 
+    },
+    onLeftClickUp: function (mouseData) {
+        alert("1 Up");
     }
 });
 
-engine.addObject({
+jscEngine.objectAdd({
     id: "2",
     layer: 10,
     xPos: 300,
@@ -34,32 +39,82 @@ engine.addObject({
     onDraw: function (context, objectData) {
 
         context.save();
+        context.beginPath();
         context.translate(objectData.xPos, objectData.yPos);
         context.rotate(objectData.angle);
-        if (isIntersecting) context.strokeStyle="red";
-        else context.strokeStyle="blue";
-        context.rect(-(objectData.boundingBoxWidth / 2),-(objectData.boundingBoxHeight / 2),
+        context.rect(-(objectData.boundingBoxWidth / 2), -(objectData.boundingBoxHeight / 2),
             objectData.boundingBoxWidth, objectData.boundingBoxHeight);
+        if (isIntersecting) context.strokeStyle = "red";
+        else context.strokeStyle = "blue";
         context.stroke();
+        context.closePath();
         context.restore();
+    },
+    onLeftClickDown: function (mouseData) {
+        alert("2 Down");
     }
 });
 
-engine.setIterationHandler({
-    onPhysicsIteration: function() {
+var isClickDown = false;
+var mouseDiff = {};
+jscEngine.objectAdd({
+    id: "d",
+    layer: 11,
+    xPos: 200,
+    yPos: 200,
+    boundingBoxHeight: 70,
+    boundingBoxWidth: 30,
+    angle: Math.PI / 4,
+    onDraw: function (context, objectData) {
+        context.save();
+        context.beginPath();
+        context.translate(objectData.xPos, objectData.yPos);
+        context.rotate(objectData.angle);
+        context.rect(-(objectData.boundingBoxWidth / 2), -(objectData.boundingBoxHeight / 2),
+            objectData.boundingBoxWidth, objectData.boundingBoxHeight);
+        if (isClickDown) context.strokeStyle = "green";
+        else context.strokeStyle = "blue";
+        context.stroke();
+        context.closePath();
+        context.restore();
+    },
+    onLeftClickDown: function (mouseData) {
+        isClickDown = true;
+        var obj = jscEngine.objectClone("d");
+        mouseDiff.x = mouseData.xPos - obj.xPos;
+        mouseDiff.y = mouseData.yPos - obj.yPos;
+    },
+    onLeftClickUp: function (mouseData) {
+        isClickDown = false;
+        alert("released :)");
+    }
+});
+
+jscEngine.iterationHandlerSet({
+    onPhysicsIteration: function () {
         isIntersecting = JSCEEngineHelpers.checkObjectsIntersection(
-            engine.getObject("1"),
-            engine.getObject("2")
+            jscEngine.objectClone("1"),
+            jscEngine.objectClone("2")
         );
     }
 });
 
-engine.setMouseHandler({
+jscEngine.mouseHandlerSet({
     onMove: function (mouseData) {
-        engine.objectLookAt("1", mouseData.xPos, mouseData.yPos);
+        jscEngine.objectLookAt("1", mouseData.xPos, mouseData.yPos);
+
+        if (isClickDown) {
+            jscEngine.objectSetPosition("d",
+                mouseData.xPos - mouseDiff.x,
+                mouseData.yPos - mouseDiff.y
+            );
+        }
     },
     onLeftDown: function (mouseData) {
-        engine.objectLookAt("2", mouseData.xPos, mouseData.yPos);
+        jscEngine.objectLookAt("2", mouseData.xPos, mouseData.yPos);
+    },
+    onLeftUp: function (mouseData) {
+        isClickDown = false;
     },
     onDraw: function (context, mouseData) {
         context.beginPath();
@@ -73,34 +128,34 @@ engine.setMouseHandler({
     }
 });
 
-engine.addKeyHandler({
+jscEngine.keyHandlerAdd({
     keyCode: JSCEngineKeyCodes.right,
     onPress: function () {
-        engine.objectTranslate("1", 1, 0);
+        jscEngine.objectStrafeRight("1", 1);
     },
     smooth: true
 });
 
-engine.addKeyHandler({
+jscEngine.keyHandlerAdd({
     keyCode: JSCEngineKeyCodes.left,
     onPress: function () {
-        engine.objectTranslate("1", -1, 0);
+        jscEngine.objectStrafeRight("1", -1);
     },
     smooth: true
 });
 
-engine.addKeyHandler({
+jscEngine.keyHandlerAdd({
     keyCode: JSCEngineKeyCodes.up,
     onPress: function () {
-        engine.objectTranslate("1", 0, -1);
+        jscEngine.objectMoveForward("1", 1);
     },
     smooth: true
 });
 
-engine.addKeyHandler({
+jscEngine.keyHandlerAdd({
     keyCode: JSCEngineKeyCodes.down,
     onPress: function () {
-        engine.objectTranslate("1", 0, 1);
+        jscEngine.objectMoveForward("1", -1);
     },
     smooth: true
 });
