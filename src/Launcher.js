@@ -1,60 +1,63 @@
 var engine = new JSCEngineCreator("pad", 400, 400);
-var bullets = [];
-var lastBulletId = 0;
-var userPosX = 0;
-var userPosY = 0;
-var mousePosX = 0;
-var mousePosY = 0;
+var isIntersecting = false;
 
 engine.addObject({
     id: "1",
     layer: 10,
+    xPos: 100,
+    yPos: 150,
+    boundingBoxHeight: 70,
+    boundingBoxWidth: 30,
+    angle: 0,
     onDraw: function (context, objectData) {
-        JSCEEngineHelpers.drawImage(context, document.getElementById("icon"), objectData);
-        userPosX = objectData.xPos;
-        userPosY = objectData.yPos;
+        context.save();
+        context.translate(objectData.xPos, objectData.yPos);
+        context.rotate(objectData.angle);
+        if (isIntersecting) context.strokeStyle="red";
+        else context.strokeStyle="blue";
+        context.rect(-(objectData.boundingBoxWidth / 2),-(objectData.boundingBoxHeight / 2),
+            objectData.boundingBoxWidth, objectData.boundingBoxHeight);
+        context.stroke();
+        context.restore();
     }
 });
 
-for (var i = 0; i < 10; i++) {
-    engine.addObject({
-        id: "random" + i,
-        xPos: Math.random() * 400,
-        yPos: Math.random() * 400,
-        angle: 0,
-        onDraw: drawRandom
-    });
-}
+engine.addObject({
+    id: "2",
+    layer: 10,
+    xPos: 300,
+    yPos: 150,
+    boundingBoxHeight: 70,
+    boundingBoxWidth: 30,
+    angle: 0,
+    onDraw: function (context, objectData) {
+        context.save();
+        context.translate(objectData.xPos, objectData.yPos);
+        context.rotate(objectData.angle);
+        if (isIntersecting) context.strokeStyle="red";
+        else context.strokeStyle="blue";
+        context.rect(-(objectData.boundingBoxWidth / 2),-(objectData.boundingBoxHeight / 2),
+            objectData.boundingBoxWidth, objectData.boundingBoxHeight);
+        context.stroke();
+        context.restore();
+    }
+});
 
-function drawRandom(context, objectData) {
-    context.beginPath();
-    context.arc(objectData.xPos, objectData.yPos, 10, 0, 2 * Math.PI);
-    context.stroke();
-    engine.objectTranslate(objectData.id, ((Math.random() * 2) - 1), ((Math.random() * 2) - 1));
-}
+engine.setIterationHandler({
+    onPhysicsIteration: function() {
+        isIntersecting = JSCEEngineHelpers.checkObjectsIntersection(
+            engine.getObject("1"),
+            engine.getObject("2")
+        );
+    }
+});
 
-engine.addMouseHandler({
+engine.setMouseHandler({
     onMove: function (mouseData) {
         engine.objectLookAt("1", mouseData.xPos, mouseData.yPos);
-        mousePosX = mouseData.xPos;
-        mousePosY = mouseData.yPos;
     },
-    onLeftDown : function(mouseData) {
-        var bulletName = "bullet" + lastBulletId++;
-        bullets.push(bulletName);
-        engine.addObject({
-            id: bulletName,
-            xPos: userPosX,
-            yPos: userPosY,
-            angle: JSCEEngineHelpers.angleFromPoints(userPosX, userPosY, mousePosX, mousePosY),
-            onDraw: function(context, objectData) {
-                engine.objectMoveForward(objectData.id, 5);
-                context.beginPath();
-                context.arc(objectData.xPos, objectData.yPos, 2, 0, 2 * Math.PI);
-                context.stroke();
-            }
-        });
-
+    onLeftDown: function (mouseData) {
+        engine.objectLookAt("2", mouseData.xPos, mouseData.yPos);
     },
     onDraw: function (context, mouseData) {
         context.beginPath();
@@ -87,7 +90,7 @@ engine.addKeyHandler({
 engine.addKeyHandler({
     keyCode: JSCEngineKeyCodes.up,
     onPress: function () {
-        engine.objectMoveForward("1", 1);
+        engine.objectTranslate("1", 0, -1);
     },
     smooth: true
 });

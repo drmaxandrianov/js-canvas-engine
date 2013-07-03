@@ -40,7 +40,8 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
             id: canvasId
         },
         timers: {
-            keyHandlersRepeatRate: 10
+            keyHandlersRepeatRate: 10,
+            physicsCalculationRepeatRate: 10
         }
     };
 
@@ -95,7 +96,7 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
 
                 // Perform iteration actions before drawing
                 if (self.iterationHandler != null) {
-                    self.iterationHandler();
+                    self.iterationHandler.onDrawIteration();
                 }
 
                 // Draw objects
@@ -133,7 +134,7 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
     // USABLE
     // Adds function which will be executed in loop before each drawing
     // iterationHandler = {onDrawIteration: func, onPhysicsIteration: func};
-    this.addIterationHandler = function(iterationHandler) {
+    this.setIterationHandler = function(iterationHandler) {
         if (iterationHandler.onDrawIteration === undefined
             && iterationHandler.onPhysicsIteration === undefined) {
             JSCEngineError("iteration handler is empty, any callback should be provided");
@@ -144,6 +145,8 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
         iterationHandler.onPhysicsIteration = iterationHandler.onPhysicsIteration || function() {};
 
         this.iterationHandler = iterationHandler;
+
+        setInterval(this.iterationHandler.onPhysicsIteration, this.settings.timers.physicsCalculationRepeatRate);
     };
 
     // Storage for all drawable objects
@@ -154,8 +157,8 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
 
     // USABLE
     // Add new object into engine: 
-    // object = {id: string, xPos: int, yPos: int, angle: intRadians, layer: int,
-    // onDraw: func}
+    // object = {id: string, xPos: int, yPos: int, angle: intRadians, layer: int, boundingBoxWidth: int,
+    // boundingBoxHeight: int, onDraw: func}
     this.addObject = function (object) {
         if (object.id === undefined) {
             JSCEngineError("can not add object without id");
@@ -174,6 +177,8 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
         object.yPos = object.yPos || 0;
         object.angle = object.angle || 0;
         object.layer = object.layer || 0;
+        object.boundingBoxWidth = object.boundingBoxWidth || 0;
+        object.boundingBoxHeight = object.boundingBoxHeight || 0;
 
         if (typeof(object.layer) != "number") {
             JSCEngineError("layer of object must be a number");
@@ -209,14 +214,17 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
                     id: this.objects[i].id,
                     xPos: this.objects[i].xPos,
                     yPos: this.objects[i].yPos,
-                    angle: this.objects[i].angle
+                    angle: this.objects[i].angle,
+                    boundingBoxWidth: this.objects[i].boundingBoxWidth,
+                    boundingBoxHeight: this.objects[i].boundingBoxHeight
                 });
         }
     };
 
+    // USABLE
     // Get the pointer to the object, not all fields may be edited (for example: id and layer are fixed)
-    // object = {id: string, xPos: int, yPos: int, angle: intRadians, layer: int,
-    // onDraw: func}
+    // object = {id: string, xPos: int, yPos: int, angle: intRadians, layer: int, boundingBoxWidth: int,
+    // boundingBoxHeight: int, onDraw: func}
     this.getObject = function (id) {
         var index = this.objectsIndex[id];
         return this.objects[index];
@@ -226,8 +234,12 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
     // Deleted the object by id
     this.deleteObject = function (id) {
         var index = this.objectsIndex[id];
-        if (index !== undefined) this.objects.splice(index, 1);
-        this.objectsIndex.splice(id, 1);
+        if (index !== undefined) {
+            this.objects.splice(index, 1);
+            this.objectsIndex.splice(id, 1);
+            return;
+        }
+        JSCEngineError("can not delete object, there are no such");
     };
 
     // USABLE
@@ -306,6 +318,18 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
         this.keyHandlers.push(keyHandler);
     };
 
+    // USABLE
+    // Remove key handler
+    this.deleteKeyHandler = function(keyCode) {
+        for (var i = 0; i < this.keyHandlers.length; i++) {
+            if (this.keyHandlers[i].keyCode == keyCode) {
+                this.keyHandlers.splice(i, 1);
+                return;
+            }
+        }
+        JSCEngineError("can not delete key handler, there are no such");
+    };
+
     // Automatically called during engine initialization.
     // Set ups the handlers for system keys events
     this.initKeyHandlers = function () {
@@ -361,7 +385,7 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
     // USABLE
     // Add handler for mouse actions
     // mouseHandler = {onLeftDown: func, onLeftUp: func, onMove: func, onDraw: func}
-    this.addMouseHandler = function (mouseHandler) {
+    this.setMouseHandler = function (mouseHandler) {
         if (mouseHandler.onLeftDown === undefined
             && mouseHandler.onLeftUp === undefined
             && mouseHandler.onMove === undefined
@@ -456,12 +480,120 @@ var JSCEEngineHelpers = (function () {
         }
     };
 
+    this.getRectanglePoints = function (objectData) {
+        if (objectData.boundingBoxHeight === undefined ||
+            objectData.boundingBoxWidth === undefined ||
+            (objectData.boundingBoxHeight == 0 && objectData.boundingBoxWidth == 0)) {
+            return null;
+        }
+
+        var ox = objectData.xPos, oy = objectData.yPos, oa = objectData.angle;
+        var ow = objectData.boundingBoxWidth, oh = objectData.boundingBoxHeight;
+
+        var rect = {};
+
+        // Setup initial position
+        rect.x1 = -ow/2;
+        rect.y1 = oh/2;
+        rect.x2 = ow/2;
+        rect.y2 = oh/2;
+        rect.x3 = ow/2;
+        rect.y3 = -oh/2;
+        rect.x4 = -ow/2;
+        rect.y4 = -oh/2;
+
+        // Rotate around center
+        rect.x1 = rect.x1 * Math.cos(oa) - rect.y1 * Math.sin(oa);
+        rect.y1 = rect.y1 * Math.cos(oa) + rect.x1 * Math.sin(oa);
+        rect.x2 = rect.x2 * Math.cos(oa) - rect.y2 * Math.sin(oa);
+        rect.y2 = rect.y2 * Math.cos(oa) + rect.x2 * Math.sin(oa);
+        rect.x3 = rect.x3 * Math.cos(oa) - rect.y3 * Math.sin(oa);
+        rect.y3 = rect.y3 * Math.cos(oa) + rect.x3 * Math.sin(oa);
+        rect.x4 = rect.x4 * Math.cos(oa) - rect.y4 * Math.sin(oa);
+        rect.y4 = rect.y4 * Math.cos(oa) + rect.x4 * Math.sin(oa);
+
+        // Translate to object position
+        rect.x1 = rect.x1 + ox;
+        rect.y1 = rect.y1 + oy;
+        rect.x2 = rect.x2 + ox;
+        rect.y2 = rect.y2 + oy;
+        rect.x3 = rect.x3 + ox;
+        rect.y3 = rect.y3 + oy;
+        rect.x4 = rect.x4 + ox;
+        rect.y4 = rect.y4 + oy;
+
+        return [
+            rect.x1,
+            rect.y1,
+            rect.x2,
+            rect.y2,
+            rect.x3,
+            rect.y3,
+            rect.x4,
+            rect.y4
+        ];
+    };
+
+    // USABLE
+    // https://gist.github.com/shamansir/3007244
+    // Check intersection of two objects
+    this.checkObjectsIntersection = function(objectData1, objectData2) {
+
+        function edgeTest(p1, p2, p3, r2) {
+            var rot = [ -(p2[1] - p1[1]),
+                p2[0] - p1[0] ];
+
+            var ref = (rot[0] * (p3[0] - p1[0]) +
+                rot[1] * (p3[1] - p1[1])) >= 0;
+
+            for (var i = 0, il = r2.length; i < il; i+=2) {
+                if (((rot[0] * (r2[i]   - p1[0]) +
+                    rot[1] * (r2[i+1] - p1[1])) >= 0) === ref) return false;
+            }
+
+            return true;
+        }
+
+        // both rects must be specified as all four points in plain vector, like:
+        //   [ x1, y1, x2, y2, x3, y3, x4, y4 ], clockwise from top-left point
+        // their points must already be rotated and specified in global space before passing to this function
+        function isecRects(r1, r2) {
+            if (!r1 || !r2) throw new Error('Rects are not accessible');
+
+            var pn, px;
+            for (var pi = 0, pl = r1.length; pi < pl; pi += 2) {
+                pn = (pi === (pl - 2)) ? 0 : pi + 2; // next point
+                px = (pn === (pl - 2)) ? 0 : pn + 2;
+                if (edgeTest([r1[pi], r1[pi+1]],
+                    [r1[pn], r1[pn+1]],
+                    [r1[px], r1[px+1]], r2)) return false;
+            }
+            for (var pi = 0, pl = r2.length; pi < pl; pi += 2) {
+                pn = (pi === (pl - 2)) ? 0 : pi + 2; // next point
+                px = (pn === (pl - 2)) ? 0 : pn + 2;
+                if (edgeTest([r2[pi], r2[pi+1]],
+                    [r2[pn], r2[pn+1]],
+                    [r2[px], r2[px+1]], r1)) return false;
+            }
+            return true;
+        }
+
+        var rect1 = this.getRectanglePoints(objectData1);
+        var rect2 = this.getRectanglePoints(objectData2);
+        if (rect1 == null || rect2 == null) {
+            console.log("ONE OBJECT IS NULL");
+            return false;
+        }
+
+        return isecRects(rect1, rect2);
+    };
+
     return this;
 })();
 
 // Logging for engine
 function JSCEngineLog(message) {
-    console.log("JSCEngine: " + message);
+    console.log("JSCEngine INFO: " + message);
 }
 
 // Logging for engine with errors
