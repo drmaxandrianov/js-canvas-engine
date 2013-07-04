@@ -21,14 +21,26 @@
 // THE SOFTWARE.
 
 
-// Main entry point for users of engine. It is suggested to call to this
-// function to create new instance of engine for future compatibility
+/**
+ * Main entry point for users of engine. It is suggested to call to this function to create new instance of engine for future compatibility. It will return JSCEngine object which contains all functions available for the user.
+ *
+ * @param {string} canvasId id of canvas in HTML file
+ * @param {number} canvasWidth width of canvas
+ * @param {number} canvasHeight height of canvas
+ * @returns {JSCEngine}
+ */
 function JSCEngineCreator(canvasId, canvasWidth, canvasHeight) {
     var engineRecord = new JSCEngineCore(canvasId, canvasWidth, canvasHeight);
     engineRecord.initialize();
     return new JSCEngine(engineRecord);
 }
 
+/**
+ * Main container for all functions of engine, available for the end user. It is safe to work with this functions.
+ *
+ * @param {JSCEngineCore} engineRecord engine, created with JSCEngineCreator
+ * @constructor
+ */
 function JSCEngine(engineRecord) {
     var engine = engineRecord;
 
@@ -98,10 +110,20 @@ function JSCEngine(engineRecord) {
     };
 }
 
-// Game engine core class, all functions below are marked as USABLE if
-// they are planned by design to be used by the user
+/**
+ * Core class for engine logic. It is not recommended to call its methods directly. Instead use JSCEngine created with JSCEngineCreator.
+ *
+ * @param {string} canvasId id of canvas in HTML file
+ * @param {number} canvasWidth width of canvas
+ * @param {number} canvasHeight height of canvas
+ * @constructor
+ */
 function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
-    // Local settings of engine
+    /**
+     * Local settings of engine. It is set up automatically during engine creation.
+     *
+     * @type {{canvas: {width: number, height: number, id: string}, timers: {keyHandlersRepeatRate: number, physicsCalculationRepeatRate: number}}}
+     */
     this.settings = {
         canvas: {
             width: canvasWidth,
@@ -114,16 +136,22 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
         }
     };
 
-    // Core parameters of current engine instance
+    /**
+     * Core parameters of current engine instance, used for inner logic.
+     *
+     * @type {{canvas: object, context: object, isInitialized: boolean}}
+     */
     this.core = {
         canvas: null,
         context: null,
         isInitialized: false
     };
 
-    // Function for initialization, called from JSCEngineCreator during
-    // engine creation
+    /**
+     * Function for engine initialization, called from JSCEngineCreator during engine creation.
+     */
     this.initialize = function () {
+        // Main canvas initialization
         this.core.canvas = document.getElementById(this.settings.canvas.id);
         this.core.canvas.width = this.settings.canvas.width;
         this.core.canvas.height = this.settings.canvas.height;
@@ -140,19 +168,24 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
         this.initAnimFrame();
         JSCEngineLog("Initialization: request for animation frame is done");
 
+        // Key handlers initialization
         this.initKeyHandlers();
         this.startKeyHandlersLoop();
         JSCEngineLog("Initialization: key handlers initialization complete");
 
+        // Mouse handlers initialization
         this.initMouseHandlers();
         JSCEngineLog("Initialization: mouse handler initialization complete");
 
+        // Mark that initialization is complete and start the main loop
         this.core.isInitialized = true;
         this.beginLoop();
         JSCEngineLog("Initialization: completed and render loop started");
     };
 
-    // Starting the drawing loop
+    /**
+     * Starting the drawing loop.
+     */
     this.beginLoop = function () {
         var self = this;
         this.continueLoop = function () {
@@ -165,20 +198,20 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
 
                 // Perform iteration actions before drawing
                 if (self.iterationHandler != null) {
-                    self.iterationHandler.onDrawIteration();
+                    self.iterationHandler.beforeDrawIteration();
                 }
 
-                // Draw objects
+                // Draw all objects
                 self.drawObjects();
 
-                //Draw mouse
+                //Draw mouse pointer
                 if (self.mouseHandler != null) {
                     self.mouseHandler.onDraw(
                         self.core.context,
                         {
-                            isLeftPressed: self.mouseHandler.isLeftPressed,
                             xPos: self.mouseHandler.xPos,
-                            yPos: self.mouseHandler.yPos
+                            yPos: self.mouseHandler.yPos,
+                            isLeftPressed: self.mouseHandler.isLeftPressed
                         });
                 }
             }
@@ -186,7 +219,9 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
         this.continueLoop();
     };
 
-    // Special check for fast performance rendering
+    /**
+     * Special check for fast performance rendering
+     */
     this.initAnimFrame = function () {
         window.requestAnimFrame = (function () {
             JSCEngineLog("Initialization: function requestAnimFrame updated");
@@ -197,20 +232,31 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
         })();
     };
 
-    // Storage for iteration handler callbacks
+    /**
+     * Storage for iteration handler callbacks
+     * @type {null} default value if unset
+     */
     this.iterationHandler = null;
 
     // USABLE
     // Adds function which will be executed in loop before each drawing
-    // iterationHandler = {onDrawIteration: func, onPhysicsIteration: func};
+    // iterationHandler = {beforeDrawIteration: func, onPhysicsIteration: func};
+
+    /**
+     * Adds function which will be executed in loop before each drawing.
+     *
+     * @param {object} iterationHandler object with callbacks
+     * @param {function} iterationHandler.beforeDrawIteration function without parameters, will be called before drawing on each loop iteration
+     * @param {function} iterationHandler.onPhysicsIteration function without parameters, will be calculated each physicsCalculationRepeatRate milliseconds
+     */
     this.setIterationHandler = function (iterationHandler) {
-        if (iterationHandler.onDrawIteration === undefined
+        if (iterationHandler.beforeDrawIteration === undefined
             && iterationHandler.onPhysicsIteration === undefined) {
             JSCEngineError("iteration handler is empty, any callback should be provided");
             return;
         }
 
-        iterationHandler.onDrawIteration = iterationHandler.onDrawIteration || function () {
+        iterationHandler.beforeDrawIteration = iterationHandler.beforeDrawIteration || function () {
         };
         iterationHandler.onPhysicsIteration = iterationHandler.onPhysicsIteration || function () {
         };
@@ -220,16 +266,35 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
         setInterval(this.iterationHandler.onPhysicsIteration, this.settings.timers.physicsCalculationRepeatRate);
     };
 
-    // Storage for all drawable objects
+    /**
+     * Storage for all drawable objects.
+     *
+     * @type {Array}
+     */
     this.objects = [];
 
-    // Index for fast searching of drawable objects
+    /**
+     * Index for fast searching of drawable objects.
+     *
+     * @type {Array}
+     */
     this.objectsIndex = [];
 
-    // USABLE
-    // Add new object into engine: 
-    // object = {id: string, xPos: int, yPos: int, angle: intRadians, layer: int, boundingBoxWidth: int,
-    // boundingBoxHeight: int, onDraw: func, onLeftClickDown: func, onLeftClickUp: func}
+    /**
+     * Add new object into engine.
+     *
+     * @param {object} object description of the object
+     * @param {string} object.id identification of the object, must be a string
+     * @param {number} [object.xPos] position on X
+     * @param {number} [object.yPos] position on Y
+     * @param {number} [object.angle] rotation angle
+     * @param {number} [object.layer] number of the layer
+     * @param {number} [object.boundingBoxWidth] width of bounding box (when angle is 0)
+     * @param {number} [object.boundingBoxHeight] height of bounding box (when angle is 0)
+     * @param {function} object.onDraw function for drawing
+     * @param {function} [object.onLeftClickDown] function for left click down (requires bounding box)
+     * @param {function} [object.onLeftClickUp] function for left click up (requires bounding box)
+     */
     this.addObject = function (object) {
         if (object.id === undefined) {
             JSCEngineError("can not add object without id");

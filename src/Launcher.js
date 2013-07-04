@@ -1,5 +1,6 @@
-var jscEngine = new JSCEngineCreator("pad", 400, 400);
+var jscEngine = JSCEngineCreator("pad", 400, 400);
 var isIntersecting = false;
+var mouse = {x: 0, y: 0};
 
 jscEngine.objectAdd({
     id: "1",
@@ -96,19 +97,22 @@ jscEngine.iterationHandlerSet({
             jscEngine.objectClone("1"),
             jscEngine.objectClone("2")
         );
+    },
+    beforeDrawIteration: function() {
+        jscEngine.objectLookAt("1", mouse.x, mouse.y);
     }
 });
 
 jscEngine.mouseHandlerSet({
     onMove: function (mouseData) {
-        jscEngine.objectLookAt("1", mouseData.xPos, mouseData.yPos);
-
         if (isClickDown) {
             jscEngine.objectSetPosition("d",
                 mouseData.xPos - mouseDiff.x,
                 mouseData.yPos - mouseDiff.y
             );
         }
+        mouse.x = mouseData.xPos;
+        mouse.y = mouseData.yPos;
     },
     onLeftDown: function (mouseData) {
         jscEngine.objectLookAt("2", mouseData.xPos, mouseData.yPos);
@@ -147,7 +151,14 @@ jscEngine.keyHandlerAdd({
 jscEngine.keyHandlerAdd({
     keyCode: JSCEngineKeyCodes.up,
     onPress: function () {
-        jscEngine.objectMoveForward("1", 1);
+        var speed = 4;
+        jscEngine.objectMoveForward("1", speed);
+        var o1 = jscEngine.objectClone("1");
+        var o2 = jscEngine.objectClone("2");
+        var willIntersect = JSCEEngineHelpers.checkObjectsIntersection(o1, o2);
+        if (willIntersect) {
+            jscEngine.objectMoveForward("1", -speed);
+        }
     },
     smooth: true
 });
