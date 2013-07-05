@@ -42,16 +42,49 @@ function JSCEngineCreator(canvasId, canvasWidth, canvasHeight) {
  * @constructor
  */
 function JSCEngine(engineRecord) {
+    /**
+     * Local variable representing the engine record.
+     *
+     * @type {JSCEngineCore}
+     */
     var engine = engineRecord;
 
+    /**
+     * Adds function which will be executed in loop before each drawing.
+     *
+     * @param {object} iterationHandler object with callbacks
+     * @param {function} [iterationHandler.beforeDrawIteration] callback, will be called before drawing on each loop iteration: (no parameters)
+     * @param {function} [iterationHandler.onPhysicsIteration] callback, will be calculated each physicsCalculationRepeatRate milliseconds: (no parameters)
+     */
     this.iterationHandlerSet = function (iterationHandler) {
         engine.setIterationHandler(iterationHandler);
     };
 
+    /**
+     * Add new object into engine.
+     *
+     * @param {object} object description of the object
+     * @param {string} object.id identification of the object, must be a string
+     * @param {number} [object.xPos] position on X of object's center
+     * @param {number} [object.yPos] position on Y of object's center
+     * @param {number} [object.angle] rotation angle
+     * @param {number} [object.layer] number of the layer
+     * @param {number} [object.boundingBoxWidth] width of bounding box (when angle is 0)
+     * @param {number} [object.boundingBoxHeight] height of bounding box (when angle is 0)
+     * @param {function} object.onDraw function for drawing: (context, {id: string, xPos: number, yPos: number, angle: number, layer: number, boundingBoxWidth: number, boundingBoxHeight: number})
+     * @param {function} [object.onLeftClickDown] function for left click down (requires bounding box): ({xPos: number, yPos: number, isLeftPressed: boolean})
+     * @param {function} [object.onLeftClickUp] function for left click up (requires bounding box): ({xPos: number, yPos: number, isLeftPressed: boolean})
+     */
     this.objectAdd = function (object) {
         engine.addObject(object);
     };
 
+    /**
+     * Get the clone copy of the object.
+     *
+     * @param {string} id identification string of object
+     * @returns {{id: string, xPos: number, yPos: number, angle: number, layer: number, boundingBoxWidth: number, boundingBoxHeight: number, onDraw: Function, onLeftClickDown: Function, onLeftClickUp: Function}} object itself
+     */
     this.objectClone = function (id) {
         var object = engine.getObject(id);
         return {
@@ -65,46 +98,119 @@ function JSCEngine(engineRecord) {
         };
     };
 
+    /**
+     * Deleted the object by id.
+     *
+     * @param {string} id identification string of object
+     */
     this.objectDelete = function (id) {
         engine.deleteObject(id);
     };
 
+    /**
+     * Set the new position of the object.
+     *
+     * @param {string} id identification string of object
+     * @param {number} xPos new position on X
+     * @param {number} yPos new position on Y
+     */
     this.objectSetPosition = function (id, xPos, yPos) {
         engine.objectSetPosition(id, xPos, yPos);
     };
 
+    /**
+     * Set the angle in radians of the object/
+     *
+     * @param {string} id identification string of object
+     * @param {number} angle new angle value
+     */
     this.objectSetRotation = function (id, angle) {
         engine.objectSetRotation(id, angle);
     };
 
+    /**
+     * Rotate object on specified angle.
+     *
+     * @param {string} id identification string of object
+     * @param {number} angleDiff rotation angle to add to existing angle
+     */
     this.objectRotate = function (id, angleDiff) {
         engine.objectRotate(id, angleDiff);
     };
 
+    /**
+     * Translate object on specified values by X and Y axises.
+     *
+     * @param {string} id identification string of object
+     * @param {number} xPosDiff translate on specified value on X
+     * @param {number} yPosDiff translate on specified value on Y
+     */
     this.objectTranslate = function (id, xPosDiff, yPosDiff) {
         engine.objectTranslate(id, xPosDiff, yPosDiff);
     };
 
+    /**
+     * Make object view at the specified point.
+     *
+     * @param {string} id identification string of object
+     * @param {number} xPos X coordinate of view point
+     * @param {number} yPos Y coordinate of view point
+     */
     this.objectLookAt = function (id, xPos, yPos) {
         engine.objectLookAt(id, xPos, yPos);
     };
 
+    /**
+     * Moves the object forward using its direction angle. Use negative number to move backward.
+     *
+     * @param {string} id identification string of object
+     * @param {number} distance distance to move
+     */
     this.objectMoveForward = function (id, distance) {
         engine.objectMoveForward(id, distance);
     };
 
+    /**
+     * Strafe the object to the left or to the right.
+     *
+     * @param {string} id identification string of object
+     * @param {number} distance distance to move
+     */
     this.objectStrafeRight = function (id, distance) {
         engine.objectStrafeRight(id, distance);
     };
 
+    /**
+     * Add new key handler.
+     *
+     * @param {object} keyHandler description of the key handler object
+     * @param {number} keyHandler.keyCode code of the key, use JSCEngineKeyCodes for standard values
+     * @param {function} [keyHandler.onPress] callback on press event: (no parameters)
+     * @param {function} [keyHandler.onRelease] callback on release event: (no parameters)
+     * @param {boolean} [keyHandler.smooth] if true then no delay between first press and keep pressing (perfect for game controls)
+     */
     this.keyHandlerAdd = function (keyHandler) {
         engine.addKeyHandler(keyHandler);
     };
 
-    this.keyHandlerDelete = function (keyHandler) {
-        engine.deleteKeyHandler(keyHandler);
+    /**
+     * Remove key handler for specified key code.
+     *
+     * @param {number} keyCode key code value, use JSCEngineKeyCodes for standard values
+     */
+    this.keyHandlerDelete = function (keyCode) {
+        engine.deleteKeyHandler(keyCode);
     };
 
+    /**
+     * Add handler for mouse actions.
+     *
+     * @param {object} mouseHandler mouse handler object
+     * @param {function} [mouseHandler.onLeftDown] callback of left click down: ({xPos: number, yPos: number, isLeftPressed: boolean})
+     * @param {function} [mouseHandler.onLeftUp] callback of left click up: ({xPos: number, yPos: number, isLeftPressed: boolean})
+     * @param {function} [mouseHandler.onMove] callback on mouse move: ({xPos: number, yPos: number, isLeftPressed: boolean})
+     * @param {function} [mouseHandler.onDraw] callback to draw mouse cursor: (context, {xPos: number, yPos: number, isLeftPressed: boolean})
+     */
     this.mouseHandlerSet = function (mouseHandler) {
         engine.setMouseHandler(mouseHandler);
     };
@@ -238,16 +344,12 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
      */
     this.iterationHandler = null;
 
-    // USABLE
-    // Adds function which will be executed in loop before each drawing
-    // iterationHandler = {beforeDrawIteration: func, onPhysicsIteration: func};
-
     /**
      * Adds function which will be executed in loop before each drawing.
      *
      * @param {object} iterationHandler object with callbacks
-     * @param {function} iterationHandler.beforeDrawIteration function without parameters, will be called before drawing on each loop iteration
-     * @param {function} iterationHandler.onPhysicsIteration function without parameters, will be calculated each physicsCalculationRepeatRate milliseconds
+     * @param {function} [iterationHandler.beforeDrawIteration] callback, will be called before drawing on each loop iteration: (no parameters)
+     * @param {function} [iterationHandler.onPhysicsIteration] callback, will be calculated each physicsCalculationRepeatRate milliseconds: (no parameters)
      */
     this.setIterationHandler = function (iterationHandler) {
         if (iterationHandler.beforeDrawIteration === undefined
@@ -285,15 +387,15 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
      *
      * @param {object} object description of the object
      * @param {string} object.id identification of the object, must be a string
-     * @param {number} [object.xPos] position on X
-     * @param {number} [object.yPos] position on Y
+     * @param {number} [object.xPos] position on X of object's center
+     * @param {number} [object.yPos] position on Y of object's center
      * @param {number} [object.angle] rotation angle
      * @param {number} [object.layer] number of the layer
      * @param {number} [object.boundingBoxWidth] width of bounding box (when angle is 0)
      * @param {number} [object.boundingBoxHeight] height of bounding box (when angle is 0)
-     * @param {function} object.onDraw function for drawing
-     * @param {function} [object.onLeftClickDown] function for left click down (requires bounding box)
-     * @param {function} [object.onLeftClickUp] function for left click up (requires bounding box)
+     * @param {function} object.onDraw function for drawing: (context, {id: string, xPos: number, yPos: number, angle: number, layer: number, boundingBoxWidth: number, boundingBoxHeight: number})
+     * @param {function} [object.onLeftClickDown] function for left click down (requires bounding box): ({xPos: number, yPos: number, isLeftPressed: boolean})
+     * @param {function} [object.onLeftClickUp] function for left click up (requires bounding box): ({xPos: number, yPos: number, isLeftPressed: boolean})
      */
     this.addObject = function (object) {
         if (object.id === undefined) {
@@ -339,8 +441,8 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
     /**
      * Comparison function for objects layers. If first object has bigger layer number, then 1, if equal, then 0, else -1.
      *
-     * @param {object} objectData1 first object to compare
-     * @param {object} objectData2 second object to compare
+     * @param {{layer: number}} objectData1 first object to compare
+     * @param {{layer: number}} objectData2 second object to compare
      * @returns {number} comparison result number
      */
     this.objectLayersComparison = function (objectData1, objectData2) {
@@ -372,7 +474,7 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
      * Get the pointer to the object, not all fields may be edited manually.
      *
      * @param {string} id identification string of object
-     * @returns {object} object itself
+     * @returns {{id: string, xPos: number, yPos: number, angle: number, layer: number, boundingBoxWidth: number, boundingBoxHeight: number, onDraw: Function, onLeftClickDown: Function, onLeftClickUp: Function}} object itself
      */
     this.getObject = function (id) {
         var index = this.objectsIndex[id];
@@ -495,9 +597,9 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
      *
      * @param {object} keyHandler description of the key handler object
      * @param {number} keyHandler.keyCode code of the key, use JSCEngineKeyCodes for standard values
-     * @param {function} keyHandler.onPress callback on press event
-     * @param {function} keyHandler.onRelease callback on release event
-     * @param {boolean} keyHandler.smooth if true then no delay between first press and keep pressing (perfect for game controls)
+     * @param {function} [keyHandler.onPress] callback on press event: (no parameters)
+     * @param {function} [keyHandler.onRelease] callback on release event: (no parameters)
+     * @param {boolean} [keyHandler.smooth] if true then no delay between first press and keep pressing (perfect for game controls)
      */
     this.addKeyHandler = function (keyHandler) {
         if (keyHandler.keyCode === undefined) {
@@ -534,8 +636,9 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
         JSCEngineError("can not delete key handler, there are no such");
     };
 
-    // Automatically called during engine initialization.
-    // Set ups the handlers for system keys events
+    /**
+     * Automatically called during engine initialization. Set ups the handlers for system keys events.
+     */
     this.initKeyHandlers = function () {
         var self = this;
         document.onkeydown = function (event) {
@@ -568,8 +671,9 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
         };
     };
 
-    // Automatically called during engine initialization.
-    // Starts the loop to check keys pressings
+    /**
+     * Automatically called during engine initialization. Starts the loop to check keys pressings.
+     */
     this.startKeyHandlersLoop = function () {
         var self = this;
         setInterval(function () {
@@ -583,12 +687,22 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
         }, this.settings.timers.keyHandlersRepeatRate);
     };
 
-    // Storage for mouse handler
+    /**
+     * Storage for mouse handler.
+     *
+     * @type {null}
+     */
     this.mouseHandler = null;
 
-    // USABLE
-    // Add handler for mouse actions
-    // mouseHandler = {onLeftDown: func, onLeftUp: func, onMove: func, onDraw: func}
+    /**
+     * Add handler for mouse actions.
+     *
+     * @param {object} mouseHandler mouse handler object
+     * @param {function} [mouseHandler.onLeftDown] callback of left click down: ({xPos: number, yPos: number, isLeftPressed: boolean})
+     * @param {function} [mouseHandler.onLeftUp] callback of left click up: ({xPos: number, yPos: number, isLeftPressed: boolean})
+     * @param {function} [mouseHandler.onMove] callback on mouse move: ({xPos: number, yPos: number, isLeftPressed: boolean})
+     * @param {function} [mouseHandler.onDraw] callback to draw mouse cursor: (context, {xPos: number, yPos: number, isLeftPressed: boolean})
+     */
     this.setMouseHandler = function (mouseHandler) {
         if (mouseHandler.onLeftDown === undefined
             && mouseHandler.onLeftUp === undefined
@@ -611,8 +725,9 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
         this.mouseHandler.isLeftPressed = false;
     };
 
-    // Automatically called during engine initialization.
-    // Set ups the handlers for system mouse events
+    /**
+     * Automatically called during engine initialization. Set ups the handlers for system mouse events.
+     */
     this.initMouseHandlers = function () {
         var self = this;
 
@@ -657,6 +772,11 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
         });
     };
 
+    /**
+     * Function to process clicks on the objects.
+     *
+     * @param {string} typeOfClick type of the click action, may be leftClickDown or leftClickUp
+     */
     this.processObjectsClicks = function (typeOfClick) {
         for (var i = 0; i < this.objects.length; i++) {
             if (typeOfClick == "leftClickDown") {
@@ -696,12 +816,17 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
 
 }
 
-// Helper class for user to do common tasks, all functions below are marked as 
-// USABLE if they are planned by design to be used by the user
+/**
+ * Helper class for user to do common tasks and make the developers live easier.
+ */
 var JSCEEngineHelpers = (function () {
-
-    // USABLE
-    // Makes it easy to draw an image using object data with specified angle
+    /**
+     * Makes it easy to draw an image using object data with specified angle.
+     *
+     * @param {object} context context to draw on
+     * @param {object} image image tag retrieved from HTML code
+     * @param {{xPos: number, yPos: number, angle: number}} objectData object data with angle and x,y positions of the center
+     */
     this.drawImage = function (context, image, objectData) {
         context.save();
         context.translate(objectData.xPos, objectData.yPos);
@@ -710,8 +835,15 @@ var JSCEEngineHelpers = (function () {
         context.restore();
     };
 
-    // USABLE
-    // Calculates the angle from two points
+    /**
+     * Calculates the angle from two points.
+     *
+     * @param {number} xPos start X position
+     * @param {number} yPos start Y position
+     * @param {number} xLookAt end X position
+     * @param {number} yLookAt end Y position
+     * @returns {number} angle of the line between start and end
+     */
     this.angleFromPoints = function (xPos, yPos, xLookAt, yLookAt) {
         var dX = xPos - xLookAt;
         var dY = yPos - yLookAt;
@@ -735,9 +867,9 @@ var JSCEEngineHelpers = (function () {
      * Helper function to determine whether there is an intersection between the two polygons described
      * by the lists of vertices. Uses the Separating Axis Theorem
      *
-     * @param polygonA an array of connected points [{x:, y:}, {x:, y:},...] that form polygonA closed polygon
-     * @param polygonB an array of connected points [{x:, y:}, {x:, y:},...] that form polygonA closed polygon
-     * @return true if there is any intersection between the 2 polygons, false otherwise
+     * @param {{x:, y:}[]} polygonA an array of connected points [{x:, y:}, {x:, y:},...] that form polygonA closed polygon
+     * @param {{x:, y:}[]} polygonB an array of connected points [{x:, y:}, {x:, y:},...] that form polygonB closed polygon
+     * @return {boolean} true if there is any intersection between the 2 polygons, false otherwise
      */
     this.doPolygonsIntersect = function (polygonA, polygonB) {
         var polygons = [polygonA, polygonB];
@@ -795,7 +927,12 @@ var JSCEEngineHelpers = (function () {
         return true;
     };
 
-    // Extrude the polygon line from object's rectangular bounding box
+    /**
+     * Extrude the polygon line from object's rectangular bounding box.
+     *
+     * @param {{xPos: number, yPos: number, boundingBoxWidth: number, boundingBoxHeight: number, angle: number}} objectData object data
+     * @returns {{x:, y:}[]} array of connected points [{x:, y:}, {x:, y:},...]
+     */
     this.getRectanglePoints = function (objectData) {
         // Check that object data is valid an collision can be performed
         if (objectData.boundingBoxHeight === undefined ||
@@ -850,17 +987,29 @@ var JSCEEngineHelpers = (function () {
     return this;
 })();
 
-// Logging for engine
+/**
+ * Logging of information for engine.
+ *
+ * @param {string} message message to log as INFO
+ */
 function JSCEngineLog(message) {
     console.log("JSCEngine INFO: " + message);
 }
 
-// Logging for engine with errors
+/**
+ * Logging of error for engine.
+ *
+ * @param {string} message message to log as ERROR
+
+ */
 function JSCEngineError(message) {
     console.log("JSCEngine ERROR: " + message);
 }
 
-// Support structure for quick key codes access
+/**
+ * Support structure for quick key codes access.
+ * @type {object}
+ */
 var JSCEngineKeyCodes = {
     left: 37,
     right: 39,
