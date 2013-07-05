@@ -336,14 +336,22 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
         }
     };
 
-    // Comparison function for objects layers
+    /**
+     * Comparison function for objects layers. If first object has bigger layer number, then 1, if equal, then 0, else -1.
+     *
+     * @param {object} objectData1 first object to compare
+     * @param {object} objectData2 second object to compare
+     * @returns {number} comparison result number
+     */
     this.objectLayersComparison = function (objectData1, objectData2) {
         if (objectData1.layer < objectData2.layer) return -1;
         else if (objectData1.layer > objectData2.layer) return 1;
         return 0;
     };
 
-    // Automatically called to draw all objects
+    /**
+     * Automatically called to draw all objects.
+     */
     this.drawObjects = function () {
         var self = this;
         for (var i = 0; i < this.objects.length; i++) {
@@ -360,17 +368,22 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
         }
     };
 
-    // USABLE
-    // Get the pointer to the object, not all fields may be edited (for example: id and layer are fixed)
-    // object = {id: string, xPos: int, yPos: int, angle: intRadians, layer: int, boundingBoxWidth: int,
-    // boundingBoxHeight: int, onDraw: func, onLeftClickDown: func, onLeftClickUp: func}
+    /**
+     * Get the pointer to the object, not all fields may be edited manually.
+     *
+     * @param {string} id identification string of object
+     * @returns {object} object itself
+     */
     this.getObject = function (id) {
         var index = this.objectsIndex[id];
         return this.objects[index];
     };
 
-    // USABLE
-    // Deleted the object by id
+    /**
+     * Deleted the object by id.
+     *
+     * @param {string} id identification string of object
+     */
     this.deleteObject = function (id) {
         var index = this.objectsIndex[id];
         if (index !== undefined) {
@@ -381,38 +394,61 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
         JSCEngineError("can not delete object, there are no such");
     };
 
-    // USABLE
-    // Set the position of the object
+    /**
+     * Set the new position of the object.
+     *
+     * @param {string} id identification string of object
+     * @param {number} xPos new position on X
+     * @param {number} yPos new position on Y
+     */
     this.objectSetPosition = function (id, xPos, yPos) {
         var object = this.getObject(id);
         object.xPos = xPos;
         object.yPos = yPos;
     };
 
-    // USABLE
-    // Set the angle in radians of the object
+    /**
+     * Set the angle in radians of the object/
+     *
+     * @param {string} id identification string of object
+     * @param {number} angle new angle value
+     */
     this.objectSetRotation = function (id, angle) {
         var object = this.getObject(id);
         object.angle = angle;
     };
 
-    // USABLE
-    // Rotate object on specified angle
+    /**
+     * Rotate object on specified angle.
+     *
+     * @param {string} id identification string of object
+     * @param {number} angleDiff rotation angle to add to existing angle
+     */
     this.objectRotate = function (id, angleDiff) {
         var object = this.getObject(id);
         object.angle += angleDiff;
     };
 
-    // USABLE
-    // Translate object on specified values by X and Y axises
+    /**
+     * Translate object on specified values by X and Y axises.
+     *
+     * @param {string} id identification string of object
+     * @param {number} xPosDiff translate on specified value on X
+     * @param {number} yPosDiff translate on specified value on Y
+     */
     this.objectTranslate = function (id, xPosDiff, yPosDiff) {
         var object = this.getObject(id);
         object.xPos += xPosDiff;
         object.yPos += yPosDiff;
     };
 
-    // USABLE
-    // Make object view at the specified point
+    /**
+     * Make object view at the specified point.
+     *
+     * @param {string} id identification string of object
+     * @param {number} xPos X coordinate of view point
+     * @param {number} yPos Y coordinate of view point
+     */
     this.objectLookAt = function (id, xPos, yPos) {
         var object = this.getObject(id);
         object.angle = JSCEEngineHelpers.angleFromPoints(
@@ -423,28 +459,46 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
         );
     };
 
-    // USABLE
-    // Moves the object forward using its direction angle
+    /**
+     * Moves the object forward using its direction angle. Use negative number to move backward.
+     *
+     * @param {string} id identification string of object
+     * @param {number} distance distance to move
+     */
     this.objectMoveForward = function (id, distance) {
         var object = this.getObject(id);
         object.xPos += Math.cos(object.angle) * distance;
         object.yPos += Math.sin(object.angle) * distance;
     };
 
-    // USABLE
-    // Strafe the object to the left or to the right
+    /**
+     * Strafe the object to the left or to the right.
+     *
+     * @param {string} id identification string of object
+     * @param {number} distance distance to move
+     */
     this.objectStrafeRight = function (id, distance) {
         var object = this.getObject(id);
         object.xPos += Math.cos(object.angle + Math.PI / 2) * distance;
         object.yPos += Math.sin(object.angle + Math.PI / 2) * distance;
     };
 
-    // Storage for all key handlers
+    /**
+     * Storage for all key handlers.
+     *
+     * @type {Array}
+     */
     this.keyHandlers = [];
 
-    // USABLE
-    // Add new key handler
-    // keyHandler = {keyCode: int, onPress: func, onRelease: func, smooth: boolean}
+    /**
+     * Add new key handler.
+     *
+     * @param {object} keyHandler description of the key handler object
+     * @param {number} keyHandler.keyCode code of the key, use JSCEngineKeyCodes for standard values
+     * @param {function} keyHandler.onPress callback on press event
+     * @param {function} keyHandler.onRelease callback on release event
+     * @param {boolean} keyHandler.smooth if true then no delay between first press and keep pressing (perfect for game controls)
+     */
     this.addKeyHandler = function (keyHandler) {
         if (keyHandler.keyCode === undefined) {
             JSCEngineError("no key code was given, can not handle a such key");
@@ -465,8 +519,11 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
         this.keyHandlers.push(keyHandler);
     };
 
-    // USABLE
-    // Remove key handler
+    /**
+     * Remove key handler for specified key code.
+     *
+     * @param {number} keyCode key code value, use JSCEngineKeyCodes for standard values
+     */
     this.deleteKeyHandler = function (keyCode) {
         for (var i = 0; i < this.keyHandlers.length; i++) {
             if (this.keyHandlers[i].keyCode == keyCode) {
