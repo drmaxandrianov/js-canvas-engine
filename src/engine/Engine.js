@@ -490,7 +490,7 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
         var index = this.objectsIndex[id];
         if (index !== undefined) {
             this.objects.splice(index, 1);
-            this.objectsIndex.splice(id, 1);
+            delete this.objectsIndex[id];
             return;
         }
         JSCEngineError("can not delete object, there are no such");
@@ -1008,6 +1008,7 @@ function JSCEngineError(message) {
 
 /**
  * Support structure for quick key codes access.
+ *
  * @type {object}
  */
 var JSCEngineKeyCodes = {
