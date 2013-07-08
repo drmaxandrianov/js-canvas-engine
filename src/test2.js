@@ -28,6 +28,11 @@ function Mob(id) {
 }
 
 function createMob() {
+    var calcMobs = 0;
+    for (var i = 0; i < mobs.length; i++) {
+        if (mobs[i].life > 0) calcMobs ++;
+    }
+    if (calcMobs >= 30) return;
     var mob = new Mob(lastMobId++);
     var pos = getPointOnPerimeter();
     mobs.push(mob);
@@ -141,21 +146,26 @@ e.iterationHandlerSet({
     onPhysicsIteration: function() {
         for (var i = 0; i < bullets.length; i++) {
             if (bullets[i].isDeleted) continue;
-            e.objectMoveForward("bul" + i, bullets[i].speed);
+            e.objectMoveForward("bul" + bullets[i].id, bullets[i].speed);
 
             for (var j = 0; j < mobs.length; j++) {
                 if (mobs[j].life <= 0) continue;
-                if (JSCEEngineHelpers.checkObjectsIntersection(e.objectClone("bul" + i), e.objectClone("mob" + j))) {
+                if (JSCEEngineHelpers.checkObjectsIntersection(e.objectClone("bul" + bullets[i].id), e.objectClone("mob" + mobs[j].id))) {
                     mobs[j].life -= bullets[i].damage;
                     bullets[i].isDeleted = true;
                     break;
                 }
             }
         }
+        var newBullets = [];
+        for (var i = 0; i < bullets.length; i++) {
+            if (!bullets[i].isDeleted) newBullets.push(bullets[i]);
+        }
+        bullets = newBullets;
     },
     beforeDrawIteration: function() {
         if (mouse.isLeftPressed && (new Date().getTime() - lastTime) > bulletDelay) {
-            lastTime = new Date().getTime()
+            lastTime = new Date().getTime();
             var bullet = new Bullet(lastBulletId++);
             bullets.push(bullet);
             e.objectAdd({
@@ -168,8 +178,11 @@ e.iterationHandlerSet({
                 boundingBoxHeight: 10,
                 layer: 8,
                 onDraw: function(context, objectData) {
-                    var id = objectData.id.slice(3);
-                    if (bullets[id].isDeleted) return;
+                    var i = 0;
+                    for (i = 0; i < bullets.length; i++) {
+                        if (bullets[i].id = objectData.id) break;
+                    }
+                    if (i == bullets.length) e.objectDelete(objectData.id);
 
                     context.beginPath();
                     context.arc(objectData.xPos, objectData.yPos, 5, 0, 2 * Math.PI);

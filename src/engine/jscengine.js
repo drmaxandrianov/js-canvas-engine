@@ -310,6 +310,9 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
                 // Draw all objects
                 self.drawObjects();
 
+                // Delete all objects which were mark for deletion
+                self.deleteObjectsBatch();
+
                 //Draw mouse pointer
                 if (self.mouseHandler != null) {
                     self.mouseHandler.onDraw(
@@ -482,18 +485,38 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
     };
 
     /**
-     * Deleted the object by id.
+     * Array of ids of objects which will be deleted after drawing loop.
+     *
+     * @type {Array}
+     */
+    this.objectsToDelete = [];
+
+    /**
+     * Deleted the object by id. Call to this function is safe.
      *
      * @param {string} id identification string of object
      */
     this.deleteObject = function (id) {
         var index = this.objectsIndex[id];
         if (index !== undefined) {
-            this.objects.splice(index, 1);
-            delete this.objectsIndex[id];
+            this.objectsToDelete.push(id);
             return;
         }
         JSCEngineError("can not delete object, there are no such");
+    };
+
+    /**
+     * Performs the deletion of batch of objects. Direct call to this function is unsafe!
+     */
+    this.deleteObjectsBatch = function () {
+        for (var i = 0; i < this.objectsToDelete.length; i++) {
+            var index = this.objectsIndex[this.objectsToDelete[i]];
+            if (index !== undefined) {
+                this.objects.splice(index, 1);
+                delete this.objectsIndex[this.objectsToDelete[i]];
+            }
+        }
+        this.objectsToDelete = [];
     };
 
     /**
