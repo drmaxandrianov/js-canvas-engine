@@ -43,4 +43,4 @@ e.keyHandlerAdd({
 Navigate your web browser to the created page. 
 
 Using JSC Engine you can control objects with keyboard and mouse. You can even perform poligonal collision detection and use
-common functions for image rendering and moving rapidly used in gaming.
+common functions for image rendering and objects moving so rapidly used in gaming.
