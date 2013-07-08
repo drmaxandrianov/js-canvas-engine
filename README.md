@@ -1,20 +1,18 @@
 JSC Engine
 ==========
 
-JSC Engine (JavaScript Canvas Engine) is small and easy to use 2D game engine for HTML canvas element.
+JSC Engine (JavaScript Canvas Engine) is a small and easy to use 2D game engine for HTML canvas element.
 
 It is so easy to use JSC Engine, that you can create your new game just in several minutes. Have a look at Quick Start
 guide inside Wiki.
 
 Quick example is below. Create the engine instance:
-
 ```javascript
 var screenWidth = 800, screenHeight = 600;
 var e = new JSCEngineCreator("pad", screenWidth, screenHeight);
 ```
 
 Add and draw the object:
-
 ```javascript
 e.objectAdd({
         id: "avatar",
@@ -32,7 +30,6 @@ e.objectAdd({
 ```
 
 Process the keys:
-
 ```javascript
 e.keyHandlerAdd({
     keyCode: JSCEngineKeyCodes.right,
