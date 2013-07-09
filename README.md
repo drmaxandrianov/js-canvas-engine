@@ -11,7 +11,8 @@ in your web browser. There will be a simple shooting game, use arrows to move th
 No apache or other web server is required.
 
 ##Another example
-In case you want to make everything by your own. Create the engine instance:
+In case you want to make everything by your own have a look at [Quick Start](https://github.com/maxpestun/po-js-canvas-engine/wiki/Quick-Start).
+Below is an example of using JSC Engine in your project:
 ```javascript
 var screenWidth = 800, screenHeight = 600;
 var e = new JSCEngineCreator("pad", screenWidth, screenHeight);
