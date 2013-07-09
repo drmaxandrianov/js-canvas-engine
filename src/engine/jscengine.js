@@ -307,11 +307,11 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
                     self.iterationHandler.beforeDrawIteration();
                 }
 
-                // Draw all objects
-                self.drawObjects();
-
                 // Delete all objects which were mark for deletion
                 self.deleteObjectsBatch();
+
+                // Draw all objects
+                self.drawObjects();
 
                 //Draw mouse pointer
                 if (self.mouseHandler != null) {
@@ -509,14 +509,28 @@ function JSCEngineCore(canvasId, canvasWidth, canvasHeight) {
      * Performs the deletion of batch of objects. Direct call to this function is unsafe!
      */
     this.deleteObjectsBatch = function () {
-        for (var i = 0; i < this.objectsToDelete.length; i++) {
-            var index = this.objectsIndex[this.objectsToDelete[i]];
-            if (index !== undefined) {
-                this.objects.splice(index, 1);
-                delete this.objectsIndex[this.objectsToDelete[i]];
+        if (this.objectsToDelete.length > 0) {
+            for (var i = 0; i < this.objectsToDelete.length; i++) {
+                var index = this.objectsIndex[this.objectsToDelete[i]];
+                if (index !== undefined) {
+                    this.objects[index] = null;
+                }
+            }
+            this.objectsToDelete = [];
+
+            // Rebuild objects
+            var newObjects = [];
+            for (var n = 0; n < this.objects.length; n++) {
+                if (this.objects[n] != null) newObjects.push(this.objects[n]);
+            }
+            this.objects = newObjects;
+
+            // Rebuild indexes
+            this.objectsIndex = [];
+            for (var j = 0; j < this.objects.length; j++) {
+                this.objectsIndex[this.objects[j].id] = j;
             }
         }
-        this.objectsToDelete = [];
     };
 
     /**
