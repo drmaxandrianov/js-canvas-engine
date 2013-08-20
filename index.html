@@ -1,79 +1,103 @@
 <!DOCTYPE html>
 <html>
-
   <head>
-    <meta charset='utf-8' />
-    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
-    <meta name="description" content="Js-canvas-engine : Small game engine for JavaScript canvas element" />
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Architects+Daughter' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print" />
 
-    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
 
-    <title>Js-canvas-engine</title>
+    <title>JS Canvas Engine by maxpestun</title>
   </head>
 
   <body>
+    <header>
+      <div class="inner">
+        <h1>JS Canvas Engine</h1>
+        <h2>JavaScript game engine for HTML5 canvas element</h2>
+        <a href="https://github.com/maxpestun/js-canvas-engine" class="button"><small>View project on</small>GitHub</a>
+      </div>
+    </header>
 
-    <!-- HEADER -->
-    <div id="header_wrap" class="outer">
-        <header class="inner">
-          <a id="forkme_banner" href="https://github.com/maxpestun/js-canvas-engine">View on GitHub</a>
+    <div id="content-wrapper">
+      <div class="inner clearfix">
+        <section id="main-content">
+          <h3>
+<a name="game-engine-made-easy" class="anchor" href="#game-engine-made-easy"><span class="octicon octicon-link"></span></a>Game Engine Made Easy</h3>
 
-          <h1 id="project_title">Js-canvas-engine</h1>
-          <h2 id="project_tagline">Small game engine for JavaScript canvas element</h2>
+<p>JSC Engine (JavaScript Canvas Engine) is a small and easy to use 2D game engine for HTML5 canvas element written in JavaScript.</p>
 
-            <section id="downloads">
-              <a class="zip_download_link" href="https://github.com/maxpestun/js-canvas-engine/zipball/master">Download this project as a .zip file</a>
-              <a class="tar_download_link" href="https://github.com/maxpestun/js-canvas-engine/tarball/master">Download this project as a tar.gz file</a>
-            </section>
-        </header>
+<p>It is so easy to use JSC Engine, that you can create your new game just in several minutes. Have a look at <a href="https://github.com/maxpestun/po-js-canvas-engine/wiki/Quick-Start">Quick Start</a> guide inside project Wiki.</p>
+
+<hr><h3>
+<a name="very-quick-example" class="anchor" href="#very-quick-example"><span class="octicon octicon-link"></span></a>Very Quick Example</h3>
+
+<p>In case you want to test everything by yourself right now just download the whole project and open the <code>index.html</code> file in your web browser. There will be a simple shooting game, use keyboard arrows to move the avatar, use left mouse button to shoot. No apache or other web server is required.</p>
+
+<h3>
+<a name="another-example" class="anchor" href="#another-example"><span class="octicon octicon-link"></span></a>Another Example</h3>
+
+<p>In case you want to make everything by your own have a look at <a href="https://github.com/maxpestun/po-js-canvas-engine/wiki/Quick-Start">Quick Start</a>. Below is an example of using JSC Engine in your project (note, <code>pad</code> is an ID of the canvas element inside HTML file):</p>
+
+<div class="highlight"><pre><span class="kd">var</span> <span class="nx">screenWidth</span> <span class="o">=</span> <span class="mi">800</span><span class="p">,</span> <span class="nx">screenHeight</span> <span class="o">=</span> <span class="mi">600</span><span class="p">;</span>
+<span class="kd">var</span> <span class="nx">e</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">JSCEngineCreator</span><span class="p">(</span><span class="s2">"pad"</span><span class="p">,</span> <span class="nx">screenWidth</span><span class="p">,</span> <span class="nx">screenHeight</span><span class="p">);</span>
+</pre></div>
+
+<p>Add and draw the object:</p>
+
+<div class="highlight"><pre><span class="nx">e</span><span class="p">.</span><span class="nx">objectAdd</span><span class="p">({</span>
+        <span class="nx">id</span><span class="o">:</span> <span class="s2">"avatar"</span><span class="p">,</span>
+        <span class="nx">xPos</span><span class="o">:</span> <span class="mi">100</span><span class="p">,</span>
+        <span class="nx">yPos</span><span class="o">:</span> <span class="mi">100</span><span class="p">,</span>
+        <span class="nx">angle</span><span class="o">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="nx">onDraw</span><span class="o">:</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">context</span><span class="p">,</span> <span class="nx">objectData</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">context</span><span class="p">.</span><span class="nx">beginPath</span><span class="p">();</span>
+            <span class="nx">context</span><span class="p">.</span><span class="nx">arc</span><span class="p">(</span><span class="nx">objectData</span><span class="p">.</span><span class="nx">xPos</span><span class="p">,</span> <span class="nx">objectData</span><span class="p">.</span><span class="nx">yPos</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">PI</span><span class="p">);</span>
+            <span class="nx">context</span><span class="p">.</span><span class="nx">stroke</span><span class="p">();</span>
+            <span class="nx">context</span><span class="p">.</span><span class="nx">closePath</span><span class="p">();</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">);</span>
+</pre></div>
+
+<p>Process the keys:</p>
+
+<div class="highlight"><pre><span class="nx">e</span><span class="p">.</span><span class="nx">keyHandlerAdd</span><span class="p">({</span>
+    <span class="nx">keyCode</span><span class="o">:</span> <span class="nx">JSCEngineKeyCodes</span><span class="p">.</span><span class="nx">right</span><span class="p">,</span>
+    <span class="nx">smooth</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+    <span class="nx">onPress</span><span class="o">:</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+        <span class="nx">e</span><span class="p">.</span><span class="nx">objectMoveForward</span><span class="p">(</span><span class="s2">"avatar"</span><span class="p">,</span> <span class="mi">5</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">});</span>
+</pre></div>
+
+<p>Using JSC Engine you can control objects with keyboard and mouse. You can even perform polygonal collision detection and use common functions for image rendering and objects moving so rapidly used in game development.</p>
+        </section>
+
+        <aside id="sidebar">
+          <a href="https://github.com/maxpestun/js-canvas-engine/zipball/master" class="button">
+            <small>Download</small>
+            .zip file
+          </a>
+          <a href="https://github.com/maxpestun/js-canvas-engine/tarball/master" class="button">
+            <small>Download</small>
+            .tar.gz file
+          </a>
+
+          <p class="repo-owner"><a href="https://github.com/maxpestun/js-canvas-engine"></a> is maintained by <a href="https://github.com/maxpestun">maxpestun</a>.</p>
+
+          <p>This page was generated by <a href="pages.github.com">GitHub Pages</a> using the Architect theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.</p>
+        </aside>
+      </div>
     </div>
 
-    <!-- MAIN CONTENT -->
-    <div id="main_content_wrap" class="outer">
-      <section id="main_content" class="inner">
-        <h3>
-<a name="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages"><span class="octicon octicon-link"></span></a>Welcome to GitHub Pages.</h3>
-
-<p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here using GitHub Flavored Markdown, select a template crafted by a designer, and publish. After your page is generated, you can check out the new branch:</p>
-
-<pre><code>$ cd your_repo_root/repo_name
-$ git fetch origin
-$ git checkout gh-pages
-</code></pre>
-
-<p>If you're using the GitHub for Mac, simply sync your repository and you'll see the new branch.</p>
-
-<h3>
-<a name="designer-templates" class="anchor" href="#designer-templates"><span class="octicon octicon-link"></span></a>Designer Templates</h3>
-
-<p>We've crafted some handsome templates for you to use. Go ahead and continue to layouts to browse through them. You can easily go back to edit your page before publishing. After publishing your page, you can revisit the page generator and switch to another theme. Your Page content will be preserved if it remained markdown format.</p>
-
-<h3>
-<a name="rather-drive-stick" class="anchor" href="#rather-drive-stick"><span class="octicon octicon-link"></span></a>Rather Drive Stick?</h3>
-
-<p>If you prefer to not use the automatic generator, push a branch named <code>gh-pages</code> to your repository to create a page manually. In addition to supporting regular HTML content, GitHub Pages support Jekyll, a simple, blog aware static site generator written by our own Tom Preston-Werner. Jekyll makes it easy to create site-wide headers and footers without having to copy them across every page. It also offers intelligent blog support and other advanced templating features.</p>
-
-<h3>
-<a name="authors-and-contributors" class="anchor" href="#authors-and-contributors"><span class="octicon octicon-link"></span></a>Authors and Contributors</h3>
-
-<p>You can <a href="https://github.com/blog/821" class="user-mention">@mention</a> a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor's GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p>
-
-<h3>
-<a name="support-or-contact" class="anchor" href="#support-or-contact"><span class="octicon octicon-link"></span></a>Support or Contact</h3>
-
-<p>Having trouble with Pages? Check out the documentation at <a href="http://help.github.com/pages">http://help.github.com/pages</a> or contact <a href="mailto:support@github.com">support@github.com</a> and we’ll help you sort it out.</p>
-      </section>
-    </div>
-
-    <!-- FOOTER  -->
-    <div id="footer_wrap" class="outer">
-      <footer class="inner">
-        <p class="copyright">Js-canvas-engine maintained by <a href="https://github.com/maxpestun">maxpestun</a></p>
-        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
-      </footer>
-    </div>
-
-              <script type="text/javascript">
+            <script type="text/javascript">
             var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
             document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
           </script>
@@ -83,7 +107,6 @@ $ git checkout gh-pages
             pageTracker._trackPageview();
             } catch(err) {}
           </script>
-
 
   </body>
 </html>
