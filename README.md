@@ -4,8 +4,6 @@ JSC Engine (JavaScript Canvas Engine) is a small and easy to use 2D game engine 
 
 It is so easy to use JSC Engine, that you can create your new game just in several minutes. Have a look at [Quick Start](https://github.com/maxpestun/po-js-canvas-engine/wiki/Quick-Start) guide inside project Wiki.
 
-***
-
 ##Very Quick Example
 In case you want to test everything by yourself right now just download the whole project and open the `index.html` file in your web browser. There will be a simple shooting game, use keyboard arrows to move the avatar, use left mouse button to shoot. No apache or other web server is required.
 
