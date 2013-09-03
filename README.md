@@ -45,4 +45,5 @@ e.keyHandlerAdd({
 Using JSC Engine you can control objects with keyboard and mouse. You can even perform polygonal collision detection and use common functions for image rendering and objects moving so rapidly used in game development.
 
 ##License
-This software is under MIT License (MIT). Copyright (c) 2013 by Maxim Pestun.
+This software is under MIT License (MIT).  
+Copyright (c) 2013 by Maxim Pestun.
